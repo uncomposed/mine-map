@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { Axial, neighbors, axialDistance, axialToPixel, pixelToAxial } from '../src/engine/hex';
+import type { Axial } from '../src/engine/hex.js';
+import { neighbors, axialDistance, axialToPixel, pixelToAxial } from '../src/engine/hex.js';
 
 const layout = { hexSize: 32, originX: 0, originY: 0 };
 
@@ -8,7 +9,7 @@ describe('axial neighbors', () => {
     const ns = neighbors({ q: 0, r: 0 });
     expect(ns).toHaveLength(6);
     // neighbors should be unique
-    const set = new Set(ns.map((n) => `${n.q},${n.r}`));
+    const set = new Set(ns.map((n: Axial) => `${n.q},${n.r}`));
     expect(set.size).toBe(6);
   });
 });
