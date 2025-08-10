@@ -1,0 +1,23 @@
+[
+    {
+        "body": "Acceptance Criteria:\n- [ ] GitHub Actions CI: install, lint, build on PR.\n- [ ] Static preview deployed (GitHub Pages/Cloudflare Pages).\n- [ ] README shows dev, build, and deploy instructions.\n",
+        "labels": [],
+        "number": 3,
+        "state": "OPEN",
+        "title": "CI & preview deployment"
+    },
+    {
+        "body": "Acceptance Criteria:\n- [ ] Axial (q,r) neighbors implemented and unit-tested.\n- [ ] Axial↔pixel conversion works at configurable hex size.\n- [ ] Hex distance function returns correct values on test cases.\n",
+        "labels": [],
+        "number": 2,
+        "state": "OPEN",
+        "title": "Axial hex utilities"
+    },
+    {
+        "body": "Acceptance Criteria:\n- [ ] Project builds locally (`npm run dev`, `npm run build`).\n- [ ] Phaser scene boots; blank canvas renders without errors.\n- [ ] ESLint + Prettier configured; `npm run lint` passes.\n- [ ] Basic folder structure: `src/engine`, `src/game`, `src/ui`.\n",
+        "labels": [],
+        "number": 1,
+        "state": "OPEN",
+        "title": "TypeScript + Phaser 3 scaffold"
+    }
+]
