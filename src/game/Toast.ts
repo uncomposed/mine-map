@@ -1,5 +1,4 @@
 import Phaser from 'phaser';
-import type { Axial } from '../engine/hex.js';
 
 export interface ToastOptions {
   message: string;
@@ -11,10 +10,10 @@ export interface ToastOptions {
 
 export class Toast {
   private scene: Phaser.Scene;
-  private text: Phaser.GameObjects.Text;
-  private background: Phaser.GameObjects.Graphics;
-  private dismissButton: Phaser.GameObjects.Text;
-  private centerButton: Phaser.GameObjects.Text;
+  private text!: Phaser.GameObjects.Text;
+  private background!: Phaser.GameObjects.Graphics;
+  private dismissButton!: Phaser.GameObjects.Text;
+  private centerButton!: Phaser.GameObjects.Text;
   private options: ToastOptions;
   private alive: boolean = true;
 

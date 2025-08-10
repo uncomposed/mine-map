@@ -17,7 +17,7 @@ export class FogOfWar {
     this.mapWidth = mapWidth;
     this.mapHeight = mapHeight;
     this.visionRadius = visionRadius;
-    this.layout = { hexSize: 18, originX: 100, originY: 100 };
+    this.layout = { hexSize: 20, originX: 100, originY: 100 }; // Match main scene layout
     
     this.fogGraphics = this.scene.add.graphics();
     this.fogGraphics.setDepth(500); // Above tiles, below UI
@@ -94,10 +94,10 @@ export class FogOfWar {
     
     this.fogGraphics.fillStyle(0x000000, alpha);
     
-    // Draw hexagon shape
+    // Draw hexagon shape (flat-top)
     const pts: Phaser.Types.Math.Vector2Like[] = [];
     for (let i = 0; i < 6; i++) {
-      const angle = (Math.PI / 180) * (60 * i - 30);
+      const angle = (Math.PI / 180) * (60 * i);
       pts.push({ x: x + r * Math.cos(angle), y: y + r * Math.sin(angle) });
     }
     

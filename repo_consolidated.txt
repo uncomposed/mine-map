@@ -1,0 +1,1637 @@
+
+
+================================================================================
+File: milestone1.json
+================================================================================
+
+[
+    {
+        "body": "Acceptance Criteria:\n- [ ] On token death, one-turn toast appears; dismissible.\n- [ ] Clicking toast recenters camera on last token position.\n",
+        "labels": [],
+        "number": 9,
+        "state": "OPEN",
+        "title": "Basic notifications (toast)"
+    },
+    {
+        "body": "Acceptance Criteria:\n- [ ] Move costs 1 MP; token updates atomically per step.\n- [ ] After moving, mine surface value v and add to MP.\n- [ ] If MP ≤ 0 after mining, token is removed.\n- [ ] Edge: MP=1 → step onto +2 → survives with MP=2.\n- [ ] Edge: MP=1 → step onto 0 → dies end of turn.\n",
+        "labels": [],
+        "number": 8,
+        "state": "OPEN",
+        "title": "Token movement + mining + death"
+    },
+    {
+        "body": "Acceptance Criteria:\n- [ ] Tiles within vision radius are revealed; others fogged.\n- [ ] Token tile always revealed.\n- [ ] Reveal updates immediately after movement.\n",
+        "labels": [],
+        "number": 7,
+        "state": "OPEN",
+        "title": "Fog of war (surface-only)"
+    },
+    {
+        "body": "Acceptance Criteria:\n- [ ] Smooth pan (mouse/touch) and bounded to map.\n- [ ] Wheel/pinch zoom with min/max limits.\n- [ ] UI text remains readable across zoom levels.\n",
+        "labels": [],
+        "number": 6,
+        "state": "OPEN",
+        "title": "Camera pan/zoom"
+    },
+    {
+        "body": "Acceptance Criteria:\n- [ ] Deterministic seed input yields identical maps.\n- [ ] Land/sea mask via low-frequency noise; archipelago belt near coasts.\n- [ ] Movement values quantized/clamped (−3…+3 with 1 neutral).\n- [ ] 60×60 map renders ≤ 100ms on typical laptop.\n",
+        "labels": [],
+        "number": 5,
+        "state": "OPEN",
+        "title": "Seeded map generation (continents, lakes, archipelagoes)"
+    },
+    {
+        "body": "Acceptance Criteria:\n- [ ] Tile renders value glyph + texture; center not obscured.\n- [ ] Colorblind-safe textures: negative=cross-hatch, neutral=dots, positive=chevrons.\n- [ ] Selection/hover states visible at multiple zoom levels.\n- [ ] Tile info panel shows movement value for selected tile.\n",
+        "labels": [],
+        "number": 4,
+        "state": "OPEN",
+        "title": "Hex tile component (render + accessibility)"
+    }
+]
+
+
+================================================================================
+File: milestone0.json
+================================================================================
+
+[
+    {
+        "body": "Acceptance Criteria:\n- [ ] GitHub Actions CI: install, lint, build on PR.\n- [ ] Static preview deployed (GitHub Pages/Cloudflare Pages).\n- [ ] README shows dev, build, and deploy instructions.\n",
+        "labels": [],
+        "number": 3,
+        "state": "OPEN",
+        "title": "CI & preview deployment"
+    },
+    {
+        "body": "Acceptance Criteria:\n- [ ] Axial (q,r) neighbors implemented and unit-tested.\n- [ ] Axial↔pixel conversion works at configurable hex size.\n- [ ] Hex distance function returns correct values on test cases.\n",
+        "labels": [],
+        "number": 2,
+        "state": "OPEN",
+        "title": "Axial hex utilities"
+    },
+    {
+        "body": "Acceptance Criteria:\n- [ ] Project builds locally (`npm run dev`, `npm run build`).\n- [ ] Phaser scene boots; blank canvas renders without errors.\n- [ ] ESLint + Prettier configured; `npm run lint` passes.\n- [ ] Basic folder structure: `src/engine`, `src/game`, `src/ui`.\n",
+        "labels": [],
+        "number": 1,
+        "state": "OPEN",
+        "title": "TypeScript + Phaser 3 scaffold"
+    }
+]
+
+
+================================================================================
+File: package.json
+================================================================================
+
+{
+  "name": "mine-map",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 5173",
+    "lint": "eslint src tests --ext .ts,.tsx,.js,.cjs,.mjs",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "type": "module",
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "@typescript-eslint/eslint-plugin": "^8.39.0",
+    "@typescript-eslint/parser": "^8.39.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^9.33.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "jsdom": "^26.1.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.39.0",
+    "vite": "^7.1.1",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.4"
+  }
+}
+
+
+
+================================================================================
+File: tsconfig.json
+================================================================================
+
+{
+  // Visit https://aka.ms/tsconfig to read more about this file
+  "compilerOptions": {
+    // File Layout
+    // "rootDir": "./src",
+    // "outDir": "./dist",
+
+    // Environment Settings
+    // See also https://aka.ms/tsconfig/module
+    "module": "nodenext",
+    "target": "esnext",
+    "types": [],
+    // For nodejs:
+    // "lib": ["esnext"],
+    // "types": ["node"],
+    // and npm install -D @types/node
+
+    // Other Outputs
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    // Stricter Typechecking Options
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    // Style Options
+    // "noImplicitReturns": true,
+    // "noImplicitOverride": true,
+    // "noUnusedLocals": true,
+    // "noUnusedParameters": true,
+    // "noFallthroughCasesInSwitch": true,
+    // "noPropertyAccessFromIndexSignature": true,
+
+    // Recommended Options
+    "strict": true,
+    "jsx": "react-jsx",
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true,
+  }
+}
+
+
+
+================================================================================
+File: eslint.config.js
+================================================================================
+
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import eslintConfigPrettier from 'eslint-config-prettier';
+
+export default [
+  // 1) Global ignores so bundles/minified code aren't linted
+  { ignores: ['dist/**', 'node_modules/**'] },
+
+  // 2) Base recommended configs
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+
+  // 3) Project rules for our source and tests only
+  {
+    files: ['src/**/*.{ts,tsx,js,mjs,cjs}', 'tests/**/*.{ts,tsx,js,mjs,cjs}'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: {
+        window: 'readonly',
+        document: 'readonly',
+        console: 'readonly'
+      }
+    },
+    rules: {
+      // Add project-specific rules here if needed
+    }
+  },
+
+  // 4) Turn off rules that conflict with Prettier's formatting
+  eslintConfigPrettier
+];
+
+
+
+================================================================================
+File: vite.config.ts
+================================================================================
+
+import { defineConfig } from 'vite';
+import tsconfigPaths from 'vite-tsconfig-paths';
+
+export default defineConfig({
+  plugins: [tsconfigPaths()],
+  server: { port: 5173 },
+  build: { outDir: 'dist' }
+});
+
+
+
+================================================================================
+File: tests/hex.test.ts
+================================================================================
+
+import { describe, it, expect } from 'vitest';
+import type { Axial } from '../src/engine/hex.js';
+import { neighbors, axialDistance, axialToPixel, pixelToAxial } from '../src/engine/hex.js';
+
+const layout = { hexSize: 32, originX: 0, originY: 0 };
+
+describe('axial neighbors', () => {
+  it('returns 6 neighbors around origin', () => {
+    const ns = neighbors({ q: 0, r: 0 });
+    expect(ns).toHaveLength(6);
+    // neighbors should be unique
+    const set = new Set(ns.map((n: Axial) => `${n.q},${n.r}`));
+    expect(set.size).toBe(6);
+  });
+});
+
+describe('axial distance', () => {
+  it('distance to self is 0', () => {
+    expect(axialDistance({ q: 0, r: 0 }, { q: 0, r: 0 })).toBe(0);
+  });
+  it('distance symmetric and matches known values', () => {
+    expect(axialDistance({ q: 0, r: 0 }, { q: 1, r: 0 })).toBe(1);
+    expect(axialDistance({ q: 0, r: 0 }, { q: 2, r: -1 })).toBe(2);
+   // max(|dq|=3, |dr|=4, |ds|=1) = 4
+    expect(axialDistance({ q: -2, r: 3 }, { q: 1, r: -1 })).toBe(4);
+  });
+});
+
+describe('axial <-> pixel', () => {
+  const samples: Axial[] = [
+    { q: 0, r: 0 },
+    { q: 1, r: 0 },
+    { q: 0, r: 1 },
+    { q: -1, r: 1 },
+    { q: 2, r: -1 }
+  ];
+  it('round-trips within tolerance for typical hexSize', () => {
+    for (const a of samples) {
+      const p = axialToPixel(a, layout);
+      const back = pixelToAxial(p.x, p.y, layout);
+      expect(back.q).toBe(a.q);
+      expect(back.r).toBe(a.r);
+    }
+  });
+});
+
+
+
+================================================================================
+File: .github/workflows/pages.yml
+================================================================================
+
+name: deploy-pages
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci || npm i
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+
+
+================================================================================
+File: .github/workflows/ci.yml
+================================================================================
+
+name: ci
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build-test-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci || npm i
+      - run: npm run lint
+      - run: npm run test -- --coverage
+      - run: npm run build
+
+
+
+================================================================================
+File: src/main.ts
+================================================================================
+
+import Phaser from 'phaser';
+import { GameScene } from './game/GameScene.js';
+
+const config: Phaser.Types.Core.GameConfig = {
+  type: Phaser.AUTO,
+  parent: 'app',
+  backgroundColor: '#111318',
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: 1024,
+    height: 768
+  },
+  scene: [GameScene],
+  physics: { default: 'arcade' },
+  render: {
+    antialias: true,
+    pixelArt: false,
+    roundPixels: false
+  },
+  antialias: true
+};
+
+new Phaser.Game(config);
+
+
+
+================================================================================
+File: src/game/GameScene.ts
+================================================================================
+
+import Phaser from 'phaser';
+import { generateMovement } from './MapGen.js';
+import type { Axial, Layout } from '../engine/hex.js';
+import { pixelToAxial, axialToPixel, axialDistance } from '../engine/hex.js';
+import { enablePanZoom } from './InputCamera.js';
+import { Token } from './Token.js';
+import { Toast, type ToastOptions } from './Toast.js';
+import { FogOfWar } from './FogOfWar.js';
+import { drawHex } from './HexTile.js';
+
+export class GameScene extends Phaser.Scene {
+  private layout!: Layout;
+  private map = generateMovement({ width: 30, height: 30, seed: 'alpha-001' });
+  private token!: Token;
+  private fogOfWar!: FogOfWar;
+  private toasts: Toast[] = [];
+  
+  // Containers for organization
+  private hexContainer!: Phaser.GameObjects.Container;
+  private tokenContainer!: Phaser.GameObjects.Container;
+  private uiContainer!: Phaser.GameObjects.Container;
+  
+  // Game state
+  private score: number = 0;
+  private tilesMined: number = 0;
+  private lastTokenPosition: Axial | null = null;
+
+  constructor() { super('GameScene'); }
+
+  create() {
+    this.layout = { hexSize: 20, originX: 100, originY: 100 };
+    enablePanZoom(this);
+
+    // Create containers
+    this.hexContainer = this.add.container(0, 0);
+    this.tokenContainer = this.add.container(0, 0);
+    this.uiContainer = this.add.container(0, 0);
+
+    // Initialize token at center of map
+    const centerQ = Math.floor(this.map.w / 2);
+    const centerR = Math.floor(this.map.h / 2);
+    this.token = new Token({ q: centerQ, r: centerR }, 5);
+    this.lastTokenPosition = { ...this.token.position };
+
+    // Initialize fog of war
+    this.fogOfWar = new FogOfWar(this, this.map.w, this.map.h, 3);
+    this.fogOfWar.updateTokenPosition(this.token.position);
+
+    // Draw initial map
+    this.drawMap();
+
+    // Draw token
+    this.drawToken();
+
+    // Add UI overlay
+    this.addUIOverlay();
+
+    // Set initial camera position to center of map
+    const centerPixel = axialToPixel({ q: centerQ, r: centerR }, this.layout);
+    this.cameras.main.centerOn(centerPixel.x, centerPixel.y);
+
+    // Handle tile clicks for movement and mining
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      const world = this.cameras.main.getWorldPoint(p.x, p.y);
+      const a = pixelToAxial(world.x, world.y, this.layout);
+      
+      if (a.q < 0 || a.r < 0 || a.q >= this.map.w || a.r >= this.map.h) return;
+      
+      // Check if clicking on token position
+      if (a.q === this.token.position.q && a.r === this.token.position.r) {
+        this.showTokenInfo();
+        return;
+      }
+      
+      // Check if clicking on adjacent tile for mining
+      const distance = axialDistance(a, this.token.position);
+      if (distance === 1) {
+        this.tryMineTile(a);
+      } else if (distance <= 2) {
+        // Try to move token
+        this.tryMoveToken(a);
+      }
+    });
+
+    // Handle hover effects
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      const world = this.cameras.main.getWorldPoint(p.x, p.y);
+      const a = pixelToAxial(world.x, world.y, this.layout);
+      this.updateHoverState(a);
+    });
+
+    // Redraw map when camera moves for viewport culling
+    this.cameras.main.on('cameramove', () => {
+      this.drawMap();
+      this.drawToken();
+    });
+  }
+
+  private drawMap() {
+    // Clear existing hexes
+    this.hexContainer.removeAll();
+    
+    // Get camera bounds for culling
+    const cam = this.cameras.main;
+    const worldBounds = {
+      left: cam.scrollX - 100,
+      right: cam.scrollX + cam.width / cam.zoom + 100,
+      top: cam.scrollY - 100,
+      bottom: cam.scrollY + cam.height / cam.zoom + 100
+    };
+    
+    // Draw only hexes within camera bounds for better performance
+    for (let r = 0; r < this.map.h; r++) {
+      for (let q = 0; q < this.map.w; q++) {
+        const pixel = axialToPixel({ q, r }, this.layout);
+        
+        // Simple bounds checking
+        if (pixel.x >= worldBounds.left && pixel.x <= worldBounds.right &&
+            pixel.y >= worldBounds.top && pixel.y <= worldBounds.bottom) {
+          this.drawHexTile(q, r);
+        }
+      }
+    }
+  }
+
+  private drawHexTile(q: number, r: number) {
+    const key = `${q},${r}`;
+    const idx = r * this.map.w + q;
+    const tileValue = this.map.move[idx]!;
+    
+    // Check if tile is revealed by fog of war
+    const revealed = this.fogOfWar.isTileRevealed(q, r);
+    
+    // Check if this is the token's position
+    const selected = q === this.token.position.q && r === this.token.position.r;
+    
+    // Create hex container
+    const hexContainer = drawHex(this, { q, r }, { 
+      layout: this.layout, 
+      value: tileValue, 
+      selected: selected, 
+      hover: false,
+      revealed: revealed
+    });
+    
+    // Position the hex container at the correct world coordinates
+    const { x, y } = axialToPixel({ q, r }, this.layout);
+    hexContainer.setPosition(x, y);
+    
+    // Add to hex container
+    this.hexContainer.add(hexContainer);
+    hexContainer.setName(key);
+  }
+
+  private updateHoverState(hoverPosition: Axial) {
+    // Only update the specific tiles that need to change
+    // Clear previous hover state
+    for (let r = 0; r < this.map.h; r++) {
+      for (let q = 0; q < this.map.w; q++) {
+        const key = `${q},${r}`;
+        const container = this.hexContainer.getByName(key) as Phaser.GameObjects.Container;
+        if (container) {
+          // Remove hover border if it exists
+          const graphics = container.getByName('hoverBorder') as Phaser.GameObjects.Graphics;
+          if (graphics) {
+            graphics.destroy();
+          }
+        }
+      }
+    }
+    
+    // Add hover state only to the hovered tile
+    if (hoverPosition.q >= 0 && hoverPosition.r >= 0 && 
+        hoverPosition.q < this.map.w && hoverPosition.r < this.map.h) {
+      const key = `${hoverPosition.q},${hoverPosition.r}`;
+      const container = this.hexContainer.getByName(key) as Phaser.GameObjects.Container;
+      if (container) {
+        // Add hover border
+        const hoverGraphics = this.add.graphics();
+        hoverGraphics.lineStyle(3, 0x00ff00, 0.9);
+        hoverGraphics.strokeCircle(0, 0, 20);
+        hoverGraphics.setName('hoverBorder');
+        container.add(hoverGraphics);
+      }
+    }
+  }
+
+  private tryMoveToken(targetPosition: Axial) {
+    if (!this.token.isAlive()) return;
+
+    // Check if target is within movement range (2 tiles for now)
+    const distance = axialDistance(targetPosition, this.token.position);
+    if (distance > 2) {
+      this.showToast('Cannot move that far!', 2000);
+      return;
+    }
+
+    // Check if target is accessible
+    const targetIdx = targetPosition.r * this.map.w + targetPosition.q;
+    const moveCost = this.map.move[targetIdx]!;
+    
+    if (moveCost <= 0) {
+      this.showToast('Cannot move to water!', 2000);
+      return;
+    }
+
+    // Store last position for death toast
+    this.lastTokenPosition = { ...this.token.position };
+
+    // Move token (costs 1 MP)
+    const success = this.token.moveTo(targetPosition);
+    if (!success) {
+      this.showToast('Not enough MP to move!', 2000);
+      return;
+    }
+
+    // Update display
+    this.updateTokenPosition();
+    this.updateMapAfterMovement();
+    
+    // Show movement feedback
+    this.showToast(`Moved to (${targetPosition.q}, ${targetPosition.r})`, 1500);
+    
+    // Update score
+    this.score += 1;
+    this.updateScoreDisplay();
+  }
+
+  private tryMineTile(targetPosition: Axial) {
+    if (!this.token.isAlive()) return;
+
+    // Check if target is adjacent
+    const distance = axialDistance(targetPosition, this.token.position);
+    if (distance !== 1) {
+      this.showToast('Can only mine adjacent tiles!', 2000);
+      return;
+    }
+
+    // Check if target is accessible
+    const targetIdx = targetPosition.r * this.map.w + targetPosition.q;
+    const tileValue = this.map.move[targetIdx]!;
+    
+    if (tileValue <= 0) {
+      this.showToast('Cannot mine water!', 2000);
+      return;
+    }
+
+    // Mine the tile
+    const success = this.token.mine(tileValue);
+    
+    if (success) {
+      // Update score
+      this.score += tileValue;
+      this.tilesMined += 1;
+      this.updateScoreDisplay();
+      
+      // Update token display
+      this.updateTokenPosition();
+      
+      this.showToast(`Mined tile! Gained ${tileValue} MP. Total MP: ${this.token.getMp()}`, 2000);
+    } else {
+      // Token died from mining
+      this.showToast('Token died from mining!', 3000);
+      this.showDeathToast();
+    }
+  }
+
+  private updateMapAfterMovement() {
+    // Update fog of war
+    this.fogOfWar.updateTokenPosition(this.token.position);
+    
+    // Redraw map with new visibility
+    this.drawMap();
+    
+    // Redraw token on top
+    this.drawToken();
+  }
+
+  private updateTokenPosition() {
+    // Clear old token
+    this.tokenContainer.removeAll();
+    
+    // Draw new token
+    this.drawToken();
+  }
+
+  private drawToken() {
+    const { x, y } = axialToPixel(this.token.position, this.layout);
+    
+    // Clear previous token
+    this.tokenContainer.removeAll();
+    
+    // Draw token as a colored circle at world coordinates
+    const tokenGraphics = this.add.graphics();
+    tokenGraphics.fillStyle(0xff0000, 0.9);
+    tokenGraphics.fillCircle(0, 0, 18);
+    tokenGraphics.lineStyle(3, 0xffffff, 1);
+    tokenGraphics.strokeCircle(0, 0, 18);
+    
+    // Add inner highlight
+    tokenGraphics.lineStyle(2, 0xff6666, 0.8);
+    tokenGraphics.strokeCircle(0, 0, 12);
+    
+    // Add MP text
+    const mpText = this.add.text(0, 0, String(this.token.getMp()), {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '16px',
+      color: '#ffffff',
+      stroke: '#000000',
+      strokeThickness: 2
+    });
+    mpText.setOrigin(0.5, 0.5).setDepth(1000);
+    
+    // Add to token container and set depth
+    this.tokenContainer.add([tokenGraphics, mpText]);
+    this.tokenContainer.setDepth(500);
+    
+    // Position the token container at the correct world coordinates
+    this.tokenContainer.setPosition(x, y);
+  }
+
+  private showTokenInfo() {
+    this.showToast(`Token at (${this.token.position.q}, ${this.token.position.r}) | MP: ${this.token.getMp()}`, 3000);
+  }
+
+  private showDeathToast() {
+    if (this.lastTokenPosition) {
+      this.showToast('Token died! Click to recenter on last position.', 5000, () => {
+        // Recenter camera on last token position
+        const lastPixel = axialToPixel(this.lastTokenPosition!, this.layout);
+        this.cameras.main.centerOn(lastPixel.x, lastPixel.y);
+      });
+    }
+  }
+
+  private addUIOverlay() {
+    const infoText = `MP: ${this.token.getMp()} | Drag to pan, scroll to zoom | Click adjacent to mine, click distant to move | WASD/QE/R for camera`;
+    const info = this.add.text(16, 16, infoText, {
+      fontFamily: 'monospace',
+      fontSize: '14px',
+      color: '#e6e6e6',
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      padding: { x: 8, y: 4 }
+    });
+    info.setScrollFactor(0).setDepth(1000);
+    this.uiContainer.add(info);
+    
+    // Add score display
+    this.updateScoreDisplay();
+  }
+
+  private updateScoreDisplay() {
+    // Remove old score display if it exists
+    const oldScore = this.uiContainer.getByName('scoreDisplay');
+    if (oldScore) {
+      oldScore.destroy();
+    }
+    
+    const scoreText = this.add.text(16, 50, `Score: ${this.score} | Tiles Mined: ${this.tilesMined}`, {
+      fontFamily: 'monospace',
+      fontSize: '14px',
+      color: '#00ff00',
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      padding: { x: 8, y: 4 }
+    });
+    scoreText.setScrollFactor(0).setDepth(1000);
+    scoreText.setName('scoreDisplay');
+    this.uiContainer.add(scoreText);
+  }
+
+  private showToast(message: string, duration: number = 3000, onCenter?: () => void) {
+    // Limit number of toasts
+    if (this.toasts.length >= 3) {
+      const oldestToast = this.toasts.shift();
+      oldestToast?.dismiss();
+    }
+    
+    const toastOptions: ToastOptions = {
+      message,
+      duration,
+      position: { x: 16, y: 80 + (this.toasts.length * 70) },
+      onDismiss: () => {
+        this.toasts = this.toasts.filter(t => t !== toast);
+      }
+    };
+    
+    // Only add onCenter if it's defined
+    if (onCenter) {
+      toastOptions.onCenter = onCenter;
+    }
+    
+    const toast = new Toast(this, toastOptions);
+    this.toasts.push(toast);
+    return toast;
+  }
+}
+
+
+
+================================================================================
+File: src/game/InputCamera.ts
+================================================================================
+
+import Phaser from 'phaser';
+
+export function enablePanZoom(scene: Phaser.Scene) {
+  const cam = scene.cameras.main;
+  
+  // Set initial zoom and enable smooth camera
+  cam.setZoom(1);
+  cam.setBackgroundColor('#111318');
+  
+  // Camera state
+  let isPanning = false;
+  let lastPointerPosition = { x: 0, y: 0 };
+  
+  // Smooth zoom variables
+  let targetZoom = 1;
+  let currentZoom = 1;
+  
+  // Constants for smooth movement
+  const ZOOM_SMOOTHING = 0.15;
+  const MAX_ZOOM = 3.0;
+  const MIN_ZOOM = 0.3;
+  const ZOOM_SPEED = 0.001;
+  
+  // Left-click drag panning (no right-click)
+  scene.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+    if (pointer.leftButtonDown()) {
+      isPanning = true;
+      lastPointerPosition = { x: pointer.x, y: pointer.y };
+    }
+  });
+  
+  scene.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+    if (pointer.leftButtonReleased()) {
+      isPanning = false;
+    }
+  });
+  
+  scene.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+    if (isPanning) {
+      const deltaX = pointer.x - lastPointerPosition.x;
+      const deltaY = pointer.y - lastPointerPosition.y;
+      
+      // Apply pan with proper world coordinate conversion
+      const worldDeltaX = deltaX / cam.zoom;
+      const worldDeltaY = deltaY / cam.zoom;
+      
+      cam.scrollX -= worldDeltaX;
+      cam.scrollY -= worldDeltaY;
+      
+      lastPointerPosition = { x: pointer.x, y: pointer.y };
+    }
+  });
+  
+  // Smooth zoom with mouse wheel
+  scene.input.on('wheel', (pointer: Phaser.Input.Pointer, gameObjects: Phaser.GameObjects.GameObject[], deltaX: number, deltaY: number) => {
+    // Calculate zoom factor based on wheel delta
+    const zoomFactor = 1 + (deltaY * ZOOM_SPEED);
+    targetZoom *= zoomFactor;
+    
+    // Clamp zoom to reasonable bounds
+    targetZoom = Phaser.Math.Clamp(targetZoom, MIN_ZOOM, MAX_ZOOM);
+    
+    // Get world point under mouse for zoom-to-point
+    const worldPoint = cam.getWorldPoint(pointer.x, pointer.y);
+    
+    // Calculate new scroll position to keep zoom point under mouse
+    const newZoom = targetZoom;
+    
+    cam.scrollX = worldPoint.x - (pointer.x / newZoom);
+    cam.scrollY = worldPoint.y - (pointer.y / newZoom);
+    
+    // Set target zoom for smooth interpolation
+    targetZoom = newZoom;
+  });
+  
+  // Smooth camera update loop
+  scene.events.on('update', () => {
+    // Smooth zoom interpolation
+    if (Math.abs(currentZoom - targetZoom) > 0.001) {
+      currentZoom = Phaser.Math.Linear(currentZoom, targetZoom, ZOOM_SMOOTHING);
+      cam.setZoom(currentZoom);
+    }
+  });
+  
+  // Add keyboard controls for accessibility
+  if (scene.input.keyboard) {
+    scene.input.keyboard.on('keydown-W', () => {
+      cam.scrollY -= 100 / cam.zoom;
+    });
+    
+    scene.input.keyboard.on('keydown-S', () => {
+      cam.scrollY += 100 / cam.zoom;
+    });
+    
+    scene.input.keyboard.on('keydown-A', () => {
+      cam.scrollX -= 100 / cam.zoom;
+    });
+    
+    scene.input.keyboard.on('keydown-D', () => {
+      cam.scrollX += 100 / cam.zoom;
+    });
+    
+    scene.input.keyboard.on('keydown-Q', () => {
+      targetZoom = Phaser.Math.Clamp(targetZoom * 1.1, MIN_ZOOM, MAX_ZOOM);
+    });
+    
+    scene.input.keyboard.on('keydown-E', () => {
+      targetZoom = Phaser.Math.Clamp(targetZoom * 0.9, MIN_ZOOM, MAX_ZOOM);
+    });
+    
+    // Reset camera to center
+    scene.input.keyboard.on('keydown-R', () => {
+      targetZoom = 1;
+      cam.centerOn(0, 0);
+    });
+  }
+}
+
+
+
+================================================================================
+File: src/game/Toast.ts
+================================================================================
+
+import Phaser from 'phaser';
+
+export interface ToastOptions {
+  message: string;
+  duration?: number;
+  position?: { x: number; y: number };
+  onDismiss?: () => void;
+  onCenter?: () => void;
+}
+
+export class Toast {
+  private scene: Phaser.Scene;
+  private text!: Phaser.GameObjects.Text;
+  private background!: Phaser.GameObjects.Graphics;
+  private dismissButton!: Phaser.GameObjects.Text;
+  private centerButton!: Phaser.GameObjects.Text;
+  private options: ToastOptions;
+  private alive: boolean = true;
+
+  constructor(scene: Phaser.Scene, options: ToastOptions) {
+    this.scene = scene;
+    this.options = options;
+    
+    this.createToast();
+    this.setupInteractions();
+    
+    // Auto-dismiss after duration
+    if (options.duration) {
+      this.scene.time.delayedCall(options.duration, () => this.dismiss());
+    }
+  }
+
+  private createToast() {
+    const { x, y } = this.options.position || { x: 16, y: 16 };
+    
+    // Background
+    this.background = this.scene.add.graphics();
+    this.background.fillStyle(0x000000, 0.8);
+    this.background.lineStyle(2, 0xffffff, 0.6);
+    this.background.fillRoundedRect(x, y, 300, 80, 8);
+    this.background.strokeRoundedRect(x, y, 300, 80, 8);
+    
+    // Message text
+    this.text = this.scene.add.text(x + 10, y + 10, this.options.message, {
+      fontFamily: 'monospace',
+      fontSize: '14px',
+      color: '#ffffff',
+      wordWrap: { width: 280 }
+    });
+    
+    // Dismiss button
+    this.dismissButton = this.scene.add.text(x + 270, y + 10, '×', {
+      fontFamily: 'monospace',
+      fontSize: '18px',
+      color: '#ffffff'
+    }).setInteractive({ useHandCursor: true });
+    
+    // Center camera button
+    this.centerButton = this.scene.add.text(x + 10, y + 50, 'Center Camera', {
+      fontFamily: 'monospace',
+      fontSize: '12px',
+      color: '#00ff00'
+    }).setInteractive({ useHandCursor: true });
+    
+    // Set depth to appear above other elements
+    this.background.setDepth(1000);
+    this.text.setDepth(1001);
+    this.dismissButton.setDepth(1001);
+    this.centerButton.setDepth(1001);
+  }
+
+  private setupInteractions() {
+    // Dismiss button
+    this.dismissButton.on('pointerdown', () => {
+      this.dismiss();
+      this.options.onDismiss?.();
+    });
+    
+    // Center camera button
+    this.centerButton.on('pointerdown', () => {
+      this.options.onCenter?.();
+    });
+  }
+
+  public dismiss() {
+    if (!this.alive) return;
+    
+    this.alive = false;
+    this.background.destroy();
+    this.text.destroy();
+    this.dismissButton.destroy();
+    this.centerButton.destroy();
+  }
+
+  public isAlive(): boolean {
+    return this.alive;
+  }
+}
+
+
+
+================================================================================
+File: src/game/MapGen.ts
+================================================================================
+
+import { fbm2D } from '../engine/field2d.js';
+
+export type MovementMap = { w: number; h: number; move: Int8Array; };
+export type GenConfig = { width: number; height: number; seed: string; clampMin?: number; clampMax?: number; landThresh?: number; };
+
+// Cache for generated maps to avoid regeneration
+const mapCache = new Map<string, MovementMap>();
+
+export function generateMovement(config: GenConfig): MovementMap {
+  const { width:w, height:h, seed, clampMin = -3, clampMax = 3, landThresh = 0.1 } = config;
+  
+  // Check cache first
+  const cacheKey = `${w}x${h}:${seed}:${clampMin}:${clampMax}:${landThresh}`;
+  if (mapCache.has(cacheKey)) {
+    return mapCache.get(cacheKey)!;
+  }
+
+  const startTime = performance.now();
+
+  // Simplified noise generation for better performance
+  const C = fbm2D(w, h, seed + ':C', { octaves: 1, freqBase: 32, persistence: 0.5 });
+  const R = fbm2D(w, h, seed + ':R', { octaves: 1, freqBase: 16, persistence: 0.5 });
+
+  const move = new Int8Array(w * h);
+
+  // Simplified formula for better performance
+  for (let i = 0; i < move.length; i++) {
+    const c = C[i]!; 
+    const r = R[i]!;
+    
+    // Simplified movement calculation
+    let M0 = c + 0.5 * r;
+    
+    if (c < landThresh) M0 = Math.min(M0, 0.5);
+    
+    let q = Math.round(M0);
+    if (q < clampMin) q = clampMin;
+    if (q > clampMax) q = clampMax;
+    if (q === 0) q = 1;
+    
+    move[i] = q as number;
+  }
+  
+  const result = { w, h, move };
+  
+  // Cache the result
+  mapCache.set(cacheKey, result);
+  
+  // Limit cache size to prevent memory issues
+  if (mapCache.size > 10) {
+    const firstKey = mapCache.keys().next().value;
+    if (firstKey) {
+      mapCache.delete(firstKey);
+    }
+  }
+  
+  const endTime = performance.now();
+  console.log(`Map generation (${w}x${h}): ${(endTime - startTime).toFixed(2)}ms`);
+  
+  return result;
+}
+
+
+
+================================================================================
+File: src/game/HexTile.ts
+================================================================================
+
+import Phaser from 'phaser';
+import type { Axial, Layout } from '../engine/hex.js';
+import { axialToPixel } from '../engine/hex.js';
+
+export type DrawOpts = { 
+  layout: Layout; 
+  value: number; 
+  radius?: number; 
+  selected?: boolean; 
+  hover?: boolean; 
+  revealed?: boolean;
+};
+
+// Pre-calculate hex points for better performance (flat-top)
+const HEX_POINTS: Phaser.Types.Math.Vector2Like[] = [];
+for (let i = 0; i < 6; i++) {
+  const angle = (Math.PI / 180) * (60 * i);
+  HEX_POINTS.push({ x: Math.cos(angle), y: Math.sin(angle) });
+}
+
+export function drawHex(scene: Phaser.Scene, a: Axial, opts: DrawOpts) {
+  const { layout, value, selected, hover, revealed } = opts;
+  const r = opts.radius ?? layout.hexSize;
+
+  // Create a container for the hex
+  const container = scene.add.container(0, 0);
+  
+  const g = scene.add.graphics();
+  
+  // Base tile color based on value
+  let baseColor: number;
+  let alpha: number;
+  
+  if (value <= 0) {
+    baseColor = 0x1e3a8a; // Deep blue for water/negative
+    alpha = 0.9;
+  } else if (value === 1) {
+    baseColor = 0x374151; // Dark gray for neutral
+    alpha = 0.85;
+  } else {
+    baseColor = 0x059669; // Green for positive
+    alpha = 0.8;
+  }
+
+  // Fill the hex
+  g.fillStyle(baseColor, alpha);
+  g.beginPath();
+  g.moveTo(HEX_POINTS[0]!.x * r, HEX_POINTS[0]!.y * r);
+  for (let i = 1; i < 6; i++) {
+    g.lineTo(HEX_POINTS[i]!.x * r, HEX_POINTS[i]!.y * r);
+  }
+  g.closePath();
+  g.fillPath();
+
+  // Add texture patterns for accessibility
+  if (revealed) {
+    g.lineStyle(1, 0xffffff, 0.3);
+    
+    if (value < 0) {
+      // Cross-hatch pattern for negative values
+      for (let i = 0; i < 3; i++) {
+        const offset = (i - 1) * (r / 3);
+        g.moveTo(-r + offset, -r);
+        g.lineTo(r + offset, r);
+        g.moveTo(r + offset, -r);
+        g.lineTo(-r + offset, r);
+      }
+    } else if (value === 1) {
+      // Dots pattern for neutral
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          const dotX = (i - 1) * (r / 2);
+          const dotY = (j - 1) * (r / 2);
+          g.fillCircle(dotX, dotY, 2);
+        }
+      }
+    } else {
+      // Chevron pattern for positive values
+      g.lineStyle(2, 0xffffff, 0.6);
+      g.beginPath();
+      g.moveTo(-r/2, -r/3);
+      g.lineTo(0, r/3);
+      g.lineTo(r/2, -r/3);
+      g.strokePath();
+    }
+  }
+
+  // Border based on state
+  if (selected) {
+    g.lineStyle(3, 0xffff00, 1); // Yellow for selection
+  } else if (hover) {
+    g.lineStyle(2, 0x00ff00, 0.9); // Green for hover
+  } else {
+    g.lineStyle(1.5, 0x666666, 0.7); // Gray for normal
+  }
+  g.strokePath();
+
+  // Add value label - LARGE and CLEAR
+  if (revealed) {
+    const label = scene.add.text(0, 0, String(value), {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '16px',
+      color: '#ffffff',
+      stroke: '#000000',
+      strokeThickness: 3
+    });
+    label.setOrigin(0.5, 0.5);
+    label.setDepth(100);
+    
+    // Name the label for easy reference
+    const key = `${a.q},${a.r}`;
+    label.setName(`label_${key}`);
+
+    container.add(label);
+  }
+
+  // Add graphics to container
+  container.add(g);
+
+  return container;
+}
+
+
+
+================================================================================
+File: src/game/Token.ts
+================================================================================
+
+import type { Axial } from '../engine/hex.js';
+
+export class Token {
+  public position: Axial;
+  public mp: number; // Movement Points
+  public alive: boolean = true;
+
+  constructor(position: Axial, initialMp: number = 3) {
+    this.position = position;
+    this.mp = initialMp;
+  }
+
+  /**
+   * Move token to new position, consuming 1 MP
+   * Returns true if movement was successful
+   */
+  moveTo(newPosition: Axial): boolean {
+    if (this.mp <= 0 || !this.alive) return false;
+    
+    this.position = newPosition;
+    this.mp -= 1;
+    return true;
+  }
+
+  /**
+   * Mine a tile and gain MP based on its value
+   * Returns true if token survives mining
+   */
+  mine(tileValue: number): boolean {
+    if (!this.alive) return false;
+    
+    // Add tile value to MP
+    this.mp += tileValue;
+    
+    // Check if token dies (MP <= 0)
+    if (this.mp <= 0) {
+      this.alive = false;
+      return false;
+    }
+    
+    return true;
+  }
+
+  /**
+   * Get current MP
+   */
+  getMp(): number {
+    return this.mp;
+  }
+
+  /**
+   * Check if token is alive
+   */
+  isAlive(): boolean {
+    return this.alive;
+  }
+
+  /**
+   * Kill the token
+   */
+  kill(): void {
+    this.alive = false;
+    this.mp = 0;
+  }
+}
+
+
+
+================================================================================
+File: src/game/FogOfWar.ts
+================================================================================
+
+import Phaser from 'phaser';
+import type { Axial, Layout } from '../engine/hex.js';
+import { axialDistance, axialToPixel } from '../engine/hex.js';
+
+export class FogOfWar {
+  private scene: Phaser.Scene;
+  private fogGraphics: Phaser.GameObjects.Graphics;
+  private visionRadius: number;
+  private mapWidth: number;
+  private mapHeight: number;
+  private revealedTiles: Set<string> = new Set();
+  private tokenPosition?: Axial;
+  private layout: Layout;
+
+  constructor(scene: Phaser.Scene, mapWidth: number, mapHeight: number, visionRadius: number = 3) {
+    this.scene = scene;
+    this.mapWidth = mapWidth;
+    this.mapHeight = mapHeight;
+    this.visionRadius = visionRadius;
+    this.layout = { hexSize: 20, originX: 100, originY: 100 }; // Match main scene layout
+    
+    this.fogGraphics = this.scene.add.graphics();
+    this.fogGraphics.setDepth(500); // Above tiles, below UI
+  }
+
+  /**
+   * Check if an object is the fog graphics object
+   */
+  public isGraphicsObject(obj: Phaser.GameObjects.GameObject): boolean {
+    return obj === this.fogGraphics;
+  }
+
+  /**
+   * Update token position and recalculate visibility
+   */
+  public updateTokenPosition(position: Axial) {
+    this.tokenPosition = position;
+    this.updateVisibility();
+  }
+
+  /**
+   * Check if a tile is visible
+   */
+  public isTileVisible(q: number, r: number): boolean {
+    if (!this.tokenPosition) return false;
+    
+    const distance = axialDistance({ q, r }, this.tokenPosition);
+    return distance <= this.visionRadius;
+  }
+
+  /**
+   * Check if a tile is revealed (was ever visible)
+   */
+  public isTileRevealed(q: number, r: number): boolean {
+    const key = `${q},${r}`;
+    return this.revealedTiles.has(key);
+  }
+
+  /**
+   * Update visibility based on current token position
+   */
+  private updateVisibility() {
+    if (!this.tokenPosition) return;
+
+    // Clear previous fog
+    this.fogGraphics.clear();
+    
+    // Only draw fog for tiles that need it
+    for (let r = 0; r < this.mapHeight; r++) {
+      for (let q = 0; q < this.mapWidth; q++) {
+        const isVisible = this.isTileVisible(q, r);
+        
+        if (isVisible) {
+          // Mark tile as revealed
+          const key = `${q},${r}`;
+          this.revealedTiles.add(key);
+        } else if (this.isTileRevealed(q, r)) {
+          // Previously revealed tile - show with partial fog
+          this.drawFogHex({ q, r }, 0.4);
+        } else {
+          // Never revealed - full fog
+          this.drawFogHex({ q, r }, 0.9);
+        }
+      }
+    }
+  }
+
+  /**
+   * Draw a single fog hex
+   */
+  private drawFogHex(axial: Axial, alpha: number) {
+    const { x, y } = axialToPixel(axial, this.layout);
+    const r = this.layout.hexSize;
+    
+    this.fogGraphics.fillStyle(0x000000, alpha);
+    
+    // Draw hexagon shape (flat-top)
+    const pts: Phaser.Types.Math.Vector2Like[] = [];
+    for (let i = 0; i < 6; i++) {
+      const angle = (Math.PI / 180) * (60 * i);
+      pts.push({ x: x + r * Math.cos(angle), y: y + r * Math.sin(angle) });
+    }
+    
+    this.fogGraphics.beginPath();
+    this.fogGraphics.moveTo(pts[0]!.x, pts[0]!.y);
+    for (let i = 1; i < 6; i++) {
+      this.fogGraphics.lineTo(pts[i]!.x, pts[i]!.y);
+    }
+    this.fogGraphics.closePath();
+    this.fogGraphics.fillPath();
+  }
+
+  /**
+   * Clear all fog (for debugging or full map reveal)
+   */
+  public clearAllFog() {
+    this.revealedTiles.clear();
+    this.fogGraphics.clear();
+  }
+
+  /**
+   * Set vision radius
+   */
+  public setVisionRadius(radius: number) {
+    this.visionRadius = radius;
+    if (this.tokenPosition) {
+      this.updateVisibility();
+    }
+  }
+
+  /**
+   * Get current vision radius
+   */
+  public getVisionRadius(): number {
+    return this.visionRadius;
+  }
+
+  /**
+   * Destroy fog graphics
+   */
+  public destroy() {
+    this.fogGraphics.destroy();
+  }
+}
+
+
+
+================================================================================
+File: src/engine/hex.ts
+================================================================================
+
+// Axial coordinates (flat-top). Reference: redblobgames hex grid guide.
+export type Axial = { q: number; r: number };
+
+export const AXIAL_DIRS: Readonly<Axial[]> = [
+  { q: +1, r: 0 },
+  { q: +1, r: -1 },
+  { q: 0, r: -1 },
+  { q: -1, r: 0 },
+  { q: -1, r: +1 },
+  { q: 0, r: +1 }
+];
+
+export function add(a: Axial, b: Axial): Axial {
+  return { q: a.q + b.q, r: a.r + b.r };
+}
+
+export function neighbors(a: Axial): Axial[] {
+  return AXIAL_DIRS.map((d) => add(a, d));
+}
+
+export function axialDistance(a: Axial, b: Axial): number {
+  const dq = a.q - b.q;
+  const dr = a.r - b.r;
+  const ds = (-a.q - a.r) - (-b.q - b.r);
+  return Math.max(Math.abs(dq), Math.abs(dr), Math.abs(ds));
+}
+
+// Layout parameters for flat-top hexes
+export type Layout = {
+  hexSize: number; // radius from center to corner
+  originX: number; // pixel origin
+  originY: number;
+};
+
+// axial -> pixel (flat-top)
+export function axialToPixel(a: Axial, layout: Layout): { x: number; y: number } {
+  const { hexSize, originX, originY } = layout;
+  const x = hexSize * (3/2 * a.q);
+  const y = hexSize * (Math.sqrt(3)/2 * a.q + Math.sqrt(3) * a.r);
+  return { x: x + originX, y: y + originY };
+}
+
+// pixel -> axial (with cube-rounding to nearest axial)
+export function pixelToAxial(x: number, y: number, layout: Layout): Axial {
+  const { hexSize, originX, originY } = layout;
+  const px = x - originX;
+  const py = y - originY;
+
+  const qf = (2/3 * px) / hexSize;
+  const rf = (-1/3 * px + Math.sqrt(3)/3 * py) / hexSize;
+
+  // convert to cube, round, then back to axial
+  const xf = qf;
+  const zf = rf;
+  const yf = -xf - zf;
+
+  let rx = Math.round(xf);
+  let ry = Math.round(yf);
+  let rz = Math.round(zf);
+
+  const x_diff = Math.abs(rx - xf);
+  const y_diff = Math.abs(ry - yf);
+  const z_diff = Math.abs(rz - zf);
+
+  if (x_diff > y_diff && x_diff > z_diff) {
+    rx = -ry - rz;
+  } else if (y_diff > z_diff) {
+    ry = -rx - rz;
+  } else {
+    rz = -rx - ry;
+  }
+
+  return { q: rx, r: rz };
+}
+
+
+
+================================================================================
+File: src/engine/rand.ts
+================================================================================
+
+export class RNG {
+  private state: number;
+  constructor(seed: string | number) {
+    let s = 0;
+    const str = String(seed);
+    for (let i = 0; i < str.length; i++) s = (s * 31 + str.charCodeAt(i)) >>> 0;
+    this.state = s || 1;
+  }
+  nextU32() {
+    this.state = (1664525 * this.state + 1013904223) >>> 0;
+    return this.state;
+  }
+  next() {
+    return this.nextU32() / 0xffffffff;
+  }
+  range(min: number, max: number) {
+    return min + (max - min) * this.next();
+  }
+}
+
+
+
+================================================================================
+File: src/engine/field2d.ts
+================================================================================
+
+import { RNG } from './rand.js';
+
+export type Field2DOpts = {
+  octaves?: number;
+  freqBase?: number;
+  persistence?: number;
+};
+
+// Cache for generated noise fields to avoid regeneration
+const noiseCache = new Map<string, Float32Array>();
+
+export function fbm2D(w: number, h: number, seed: string, opts: Field2DOpts = {}) {
+  const cacheKey = `${w}x${h}:${seed}:${JSON.stringify(opts)}`;
+  
+  // Check cache first
+  if (noiseCache.has(cacheKey)) {
+    return noiseCache.get(cacheKey)!;
+  }
+
+  const { octaves = 4, freqBase = 32, persistence = 0.5 } = opts;
+  const rng = new RNG(seed);
+  
+  // Pre-calculate all phase offsets once
+  const phases = Array.from({ length: octaves }, () => ({
+    ax: rng.range(0, Math.PI * 2),
+    ay: rng.range(0, Math.PI * 2),
+    bx: rng.range(0, Math.PI * 2),
+    by: rng.range(0, Math.PI * 2)
+  }));
+
+  // Pre-calculate frequency and amplitude multipliers
+  const freqs = new Array(octaves);
+  const amps = new Array(octaves);
+  for (let o = 0; o < octaves; o++) {
+    freqs[o] = (1 / freqBase) * Math.pow(2, o);
+    amps[o] = Math.pow(persistence, o);
+  }
+
+  const out = new Float32Array(w * h);
+  
+  // Optimized nested loops with pre-calculated values
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let val = 0;
+      for (let o = 0; o < octaves; o++) {
+        const f = freqs[o];
+        const amp = amps[o];
+        const ph = phases[o];
+        if (ph) {
+          const xf = (x + ph.ax) * f;
+          const yf = (y + ph.ay) * f;
+          const xf2 = (x + ph.bx) * f;
+          const yf2 = (y + ph.by) * f;
+          
+          const s = Math.sin(xf) * Math.cos(yf) * 0.5 + Math.cos(xf2) * Math.sin(yf2) * 0.5;
+          val += s * amp;
+        }
+      }
+      out[y * w + x] = val;
+    }
+  }
+  
+  // Optimized normalization
+  let min = Infinity, max = -Infinity;
+  for (let i = 0; i < out.length; i++) {
+    const v = out[i];
+    if (v < min) min = v;
+    if (v > max) max = v;
+  }
+  
+  const scale = max !== min ? (2 / (max - min)) : 1;
+  const offset = min * scale - 1;
+  
+  for (let i = 0; i < out.length; i++) {
+    out[i] = out[i] * scale - offset;
+  }
+  
+  // Cache the result
+  noiseCache.set(cacheKey, out);
+  
+  // Limit cache size to prevent memory issues
+  if (noiseCache.size > 20) {
+    const firstKey = noiseCache.keys().next().value;
+    noiseCache.delete(firstKey);
+  }
+  
+  return out;
+}
+

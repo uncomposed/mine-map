@@ -2,69 +2,120 @@ import Phaser from 'phaser';
 import type { Axial, Layout } from '../engine/hex.js';
 import { axialToPixel } from '../engine/hex.js';
 
-export type DrawOpts = { layout: Layout; value: number; radius?: number; selected?: boolean; hover?: boolean; };
+export type DrawOpts = { 
+  layout: Layout; 
+  value: number; 
+  radius?: number; 
+  selected?: boolean; 
+  hover?: boolean; 
+  revealed?: boolean;
+};
+
+// Pre-calculate hex points for better performance (flat-top)
+const HEX_POINTS: Phaser.Types.Math.Vector2Like[] = [];
+for (let i = 0; i < 6; i++) {
+  const angle = (Math.PI / 180) * (60 * i);
+  HEX_POINTS.push({ x: Math.cos(angle), y: Math.sin(angle) });
+}
 
 export function drawHex(scene: Phaser.Scene, a: Axial, opts: DrawOpts) {
-  const { layout, value, selected, hover } = opts;
-  const { x, y } = axialToPixel(a, layout);
+  const { layout, value, selected, hover, revealed } = opts;
   const r = opts.radius ?? layout.hexSize;
 
-  const g = scene.add.graphics({ x, y });
+  // Create a container for the hex
+  const container = scene.add.container(0, 0);
   
-  // Determine line style based on state
-  if (selected) {
-    g.lineStyle(2, 0xffffff, 1);
-  } else if (hover) {
-    g.lineStyle(2, 0x00ff00, 0.8);
+  const g = scene.add.graphics();
+  
+  // Base tile color based on value
+  let baseColor: number;
+  let alpha: number;
+  
+  if (value <= 0) {
+    baseColor = 0x1e3a8a; // Deep blue for water/negative
+    alpha = 0.9;
+  } else if (value === 1) {
+    baseColor = 0x374151; // Dark gray for neutral
+    alpha = 0.85;
   } else {
-    g.lineStyle(1, 0xffffff, 0.6);
+    baseColor = 0x059669; // Green for positive
+    alpha = 0.8;
   }
 
-  const fill = value <= 0 ? 0x153a6f : value === 1 ? 0x303540 : 0x3c6e36;
-  const alpha = 0.9;
-
-  const pts: Phaser.Types.Math.Vector2Like[] = [];
-  for (let i = 0; i < 6; i++) {
-    const angle = (Math.PI / 180) * (60 * i - 30);
-    pts.push({ x: r * Math.cos(angle), y: r * Math.sin(angle) });
-  }
-  g.fillStyle(fill, alpha);
+  // Fill the hex
+  g.fillStyle(baseColor, alpha);
   g.beginPath();
-  g.moveTo(pts[0].x, pts[0].y);
-  for (let i = 1; i < 6; i++) g.lineTo(pts[i].x, pts[i].y);
+  g.moveTo(HEX_POINTS[0]!.x * r, HEX_POINTS[0]!.y * r);
+  for (let i = 1; i < 6; i++) {
+    g.lineTo(HEX_POINTS[i]!.x * r, HEX_POINTS[i]!.y * r);
+  }
   g.closePath();
   g.fillPath();
-  g.strokePath();
 
-  g.lineStyle(1, 0xffffff, 0.15);
-  if (value <= 0) {
-    for (let t = -r; t <= r; t += r / 3) {
-      g.lineBetween(-r, t, r, t);
-      g.lineBetween(t, -r, t, r);
-    }
-  } else if (value === 1) {
-    for (let yy = -r * 0.7; yy <= r * 0.7; yy += r / 3) {
-      for (let xx = -r * 0.7; xx <= r * 0.7; xx += r / 3) {
-        g.fillStyle(0xffffff, 0.15);
-        g.fillCircle(xx, yy, 1.5);
+  // Add texture patterns for accessibility
+  if (revealed) {
+    g.lineStyle(1, 0xffffff, 0.3);
+    
+    if (value < 0) {
+      // Cross-hatch pattern for negative values
+      for (let i = 0; i < 3; i++) {
+        const offset = (i - 1) * (r / 3);
+        g.moveTo(-r + offset, -r);
+        g.lineTo(r + offset, r);
+        g.moveTo(r + offset, -r);
+        g.lineTo(-r + offset, r);
       }
-    }
-  } else if (value > 1) {
-    for (let yy = -r * 0.8; yy <= r * 0.8; yy += r / 3) {
+    } else if (value === 1) {
+      // Dots pattern for neutral
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          const dotX = (i - 1) * (r / 2);
+          const dotY = (j - 1) * (r / 2);
+          g.fillCircle(dotX, dotY, 2);
+        }
+      }
+    } else {
+      // Chevron pattern for positive values
+      g.lineStyle(2, 0xffffff, 0.6);
       g.beginPath();
-      g.moveTo(-r * 0.5, yy + r / 6);
-      g.lineTo(0, yy - r / 6);
-      g.lineTo(r * 0.5, yy + r / 6);
+      g.moveTo(-r/2, -r/3);
+      g.lineTo(0, r/3);
+      g.lineTo(r/2, -r/3);
       g.strokePath();
     }
   }
 
-  const label = scene.add.text(x, y, String(value), {
-    fontFamily: 'monospace',
-    fontSize: '12px',
-    color: '#e6e6e6'
-  }).setOrigin(0.5, 0.55);
-  label.setDepth(100);
+  // Border based on state
+  if (selected) {
+    g.lineStyle(3, 0xffff00, 1); // Yellow for selection
+  } else if (hover) {
+    g.lineStyle(2, 0x00ff00, 0.9); // Green for hover
+  } else {
+    g.lineStyle(1.5, 0x666666, 0.7); // Gray for normal
+  }
+  g.strokePath();
 
-  return g;
+  // Add value label - LARGE and CLEAR
+  if (revealed) {
+    const label = scene.add.text(0, 0, String(value), {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '16px',
+      color: '#ffffff',
+      stroke: '#000000',
+      strokeThickness: 3
+    });
+    label.setOrigin(0.5, 0.5);
+    label.setDepth(100);
+    
+    // Name the label for easy reference
+    const key = `${a.q},${a.r}`;
+    label.setName(`label_${key}`);
+
+    container.add(label);
+  }
+
+  // Add graphics to container
+  container.add(g);
+
+  return container;
 }

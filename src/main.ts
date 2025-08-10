@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GameScene } from './game/GameScene';
+import { GameScene } from './game/GameScene.js';
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -12,7 +12,13 @@ const config: Phaser.Types.Core.GameConfig = {
     height: 768
   },
   scene: [GameScene],
-  physics: { default: 'arcade' }
+  physics: { default: 'arcade' },
+  render: {
+    antialias: true,
+    pixelArt: false,
+    roundPixels: false
+  },
+  antialias: true
 };
 
 new Phaser.Game(config);

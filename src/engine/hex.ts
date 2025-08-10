@@ -1,4 +1,4 @@
-// Axial coordinates (pointy-top). Reference: redblobgames hex grid guide.
+// Axial coordinates (flat-top). Reference: redblobgames hex grid guide.
 export type Axial = { q: number; r: number };
 
 export const AXIAL_DIRS: Readonly<Axial[]> = [
@@ -25,18 +25,18 @@ export function axialDistance(a: Axial, b: Axial): number {
   return Math.max(Math.abs(dq), Math.abs(dr), Math.abs(ds));
 }
 
-// Layout parameters for pointy-top hexes
+// Layout parameters for flat-top hexes
 export type Layout = {
   hexSize: number; // radius from center to corner
   originX: number; // pixel origin
   originY: number;
 };
 
-// axial -> pixel (pointy-top)
+// axial -> pixel (flat-top)
 export function axialToPixel(a: Axial, layout: Layout): { x: number; y: number } {
   const { hexSize, originX, originY } = layout;
-  const x = hexSize * (Math.sqrt(3) * a.q + (Math.sqrt(3) / 2) * a.r);
-  const y = hexSize * ((3 / 2) * a.r);
+  const x = hexSize * (3/2 * a.q);
+  const y = hexSize * (Math.sqrt(3)/2 * a.q + Math.sqrt(3) * a.r);
   return { x: x + originX, y: y + originY };
 }
 
@@ -46,8 +46,8 @@ export function pixelToAxial(x: number, y: number, layout: Layout): Axial {
   const px = x - originX;
   const py = y - originY;
 
-  const qf = (Math.sqrt(3) / 3 * px - 1 / 3 * py) / (hexSize / 1);
-  const rf = (2 / 3 * py) / (hexSize / 1);
+  const qf = (2/3 * px) / hexSize;
+  const rf = (-1/3 * px + Math.sqrt(3)/3 * py) / hexSize;
 
   // convert to cube, round, then back to axial
   const xf = qf;
