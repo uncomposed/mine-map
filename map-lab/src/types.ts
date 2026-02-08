@@ -14,6 +14,9 @@ export interface WorldConfig {
     seamWeight: number;
     depthWeight: number;
     seamDensity: number;
+    seaLevel: number;
+    coastSharpness: number;
+    mountainSharpness: number;
   };
   layers: number;
   bands: number[];

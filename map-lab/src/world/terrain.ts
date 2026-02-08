@@ -12,6 +12,7 @@ export type TerrainContext = {
   base: Noise2D;
   ridge: Noise2D;
   continent: Noise2D;
+  detail: Noise2D;
   warpX: Noise2D;
   warpY: Noise2D;
   seam: Noise2D;
@@ -43,9 +44,10 @@ export function createTerrainContext(cfg: WorldConfig, remix?: Remix): TerrainCo
     base: makeNoise2D(seed * 11 + 1),
     ridge: makeNoise2D(seed * 11 + 2),
     continent: makeNoise2D(seed * 11 + 3),
-    warpX: makeNoise2D(seed * 11 + 4),
-    warpY: makeNoise2D(seed * 11 + 5),
-    seam: makeNoise2D(seed * 11 + 6),
+    detail: makeNoise2D(seed * 11 + 4),
+    warpX: makeNoise2D(seed * 11 + 5),
+    warpY: makeNoise2D(seed * 11 + 6),
+    seam: makeNoise2D(seed * 11 + 7),
     plates: plateSites(cfg.noise.plateCount, seed, remix?.dPlateShift),
   };
 }
@@ -60,36 +62,49 @@ export function generateChunkData(req: GenerateChunkInput, context?: TerrainCont
     const r = Math.floor(i / CHUNK_SIZE) + chunk.cr * CHUNK_SIZE;
 
     const world = axialToWorldUnit(q, r);
-    const warpFreq = Math.max(0.0001, cfg.noise.warpFreq);
-    const wx = world.x + cfg.noise.warpAmp * ctx.warpX(world.x * warpFreq, world.y * warpFreq);
-    const wy = world.y + cfg.noise.warpAmp * ctx.warpY(world.x * warpFreq, world.y * warpFreq);
+    const macroWarpFreq = Math.max(0.0001, cfg.noise.warpFreq * 0.35);
+    const microWarpFreq = Math.max(0.0001, cfg.noise.warpFreq * 1.6);
+    const macroWarpAmp = cfg.noise.warpAmp * 0.55;
+    const microWarpAmp = cfg.noise.warpAmp * 0.95;
 
-    const f = fbm(ctx.base, wx, wy, cfg.noise.octaves, cfg.noise.lacunarity, cfg.noise.gain);
-    const ridged = 1 - Math.abs(fbm(ctx.ridge, wx * 1.4, wy * 1.4, Math.max(2, cfg.noise.octaves - 1), cfg.noise.lacunarity, cfg.noise.gain));
-    const continent = fbm(ctx.continent, wx * 0.18, wy * 0.18, 4, 2.0, 0.5);
-    const plate = plateField(wx, wy, ctx.plates);
-    const seam = seamField(ctx.seam, wx, wy, cfg.noise.seamDensity);
+    const macroWx = world.x + macroWarpAmp * ctx.warpX(world.x * macroWarpFreq, world.y * macroWarpFreq);
+    const macroWy = world.y + macroWarpAmp * ctx.warpY(world.x * macroWarpFreq, world.y * macroWarpFreq);
+    const microWx = world.x + microWarpAmp * ctx.warpX(world.x * microWarpFreq + 1000, world.y * microWarpFreq - 1000);
+    const microWy = world.y + microWarpAmp * ctx.warpY(world.x * microWarpFreq - 1000, world.y * microWarpFreq + 1000);
+
+    const macroContinent = fbm(ctx.continent, macroWx * 0.12, macroWy * 0.12, 4, 2.0, 0.5);
+    const microFbm = fbm(ctx.base, microWx, microWy, cfg.noise.octaves, cfg.noise.lacunarity, cfg.noise.gain);
+    const detail = fbm(ctx.detail, microWx * 1.7, microWy * 1.7, Math.max(2, cfg.noise.octaves - 1), 2.1, 0.52);
+    const ridged = 1 - Math.abs(fbm(ctx.ridge, microWx * 1.35, microWy * 1.35, Math.max(2, cfg.noise.octaves - 1), cfg.noise.lacunarity, cfg.noise.gain));
+    const plate = plateMetrics(macroWx, macroWy, ctx.plates);
+    const seam = seamField(ctx.seam, microWx, microWy, cfg.noise.seamDensity);
     const depth = depthBand(layer, cfg.layers);
 
-    let v =
-      cfg.noise.fbmWeight * f +
-      cfg.noise.ridgedWeight * (ridged * 2 - 1) +
-      cfg.noise.plateWeight * plate +
-      cfg.noise.seamWeight * seam +
-      cfg.noise.depthWeight * depth +
-      0.55 * continent;
+    const macro = macroContinent * 0.95 + plate.interior * cfg.noise.plateWeight;
+    const micro = microFbm * cfg.noise.fbmWeight + (ridged * 2 - 1) * cfg.noise.ridgedWeight + detail * 0.25;
+    const boundaryUplift = plate.boundary * Math.max(0.05, cfg.noise.plateWeight) * 0.85;
+
+    let v = macro + micro + boundaryUplift + seam * cfg.noise.seamWeight * 0.18 + cfg.noise.depthWeight * depth;
 
     if (remix?.dWeights) {
       const d = remix.dWeights;
       v +=
-        (d.fbmWeight ?? 0) * f +
+        (d.fbmWeight ?? 0) * microFbm +
         (d.ridgedWeight ?? 0) * (ridged * 2 - 1) +
-        (d.plateWeight ?? 0) * plate +
+        (d.plateWeight ?? 0) * plate.interior +
         (d.seamWeight ?? 0) * seam +
         (d.depthWeight ?? 0) * depth;
     }
 
-    movement[i] = clamp(Math.tanh(v * 1.25), -1, 1);
+    const seaShifted = v - cfg.noise.seaLevel;
+    const coastSharpness = Math.max(0.35, cfg.noise.coastSharpness);
+    const mountainSharpness = Math.max(0.6, cfg.noise.mountainSharpness);
+    const shaped =
+      seaShifted < 0
+        ? -Math.pow(Math.abs(seaShifted), coastSharpness)
+        : Math.pow(seaShifted, mountainSharpness);
+
+    movement[i] = clamp(Math.tanh(shaped * 1.15), -1, 1);
   }
 
   return { cq: chunk.cq, cr: chunk.cr, size: CHUNK_SIZE * CHUNK_SIZE, movement };
@@ -138,7 +153,7 @@ function plateSites(count: number, seed: number, shift?: Record<number, { dx: nu
   return out;
 }
 
-function plateField(x: number, y: number, sites: PlateSite[]) {
+function plateMetrics(x: number, y: number, sites: PlateSite[]) {
   let min1 = Number.POSITIVE_INFINITY;
   let min2 = Number.POSITIVE_INFINITY;
 
@@ -155,9 +170,15 @@ function plateField(x: number, y: number, sites: PlateSite[]) {
     }
   }
 
-  const core = clamp((min2 - min1) / 520, 0, 1);
+  const spread = clamp((min2 - min1) / 480, 0, 1);
+  const boundary = 1 - spread;
+  const interior = spread * 2 - 1;
   const variation = Math.sin(x * 0.0016 + y * 0.0007) * 0.12;
-  return clamp(core * 2 - 1 + variation, -1, 1);
+
+  return {
+    interior: clamp(interior + variation, -1, 1),
+    boundary: clamp(boundary + variation * 0.3, 0, 1),
+  };
 }
 
 function seamField(noise: Noise2D, x: number, y: number, density: number) {

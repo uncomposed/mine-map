@@ -19,6 +19,9 @@ const INITIAL_CONFIG: WorldConfig = {
     seamWeight: 0.18,
     depthWeight: 0.15,
     seamDensity: 0.5,
+    seaLevel: 0.05,
+    coastSharpness: 0.78,
+    mountainSharpness: 1.25,
   },
   layers: 4,
   bands: [],
@@ -122,6 +125,50 @@ export default function App() {
                   step={0.01}
                   value={cfg.noise.seamDensity}
                   onChange={(e) => setCfg({ ...cfg, noise: { ...cfg.noise, seamDensity: Number(e.target.value) } })}
+                />
+              </Field>
+
+              <Field label={`Sea Level (${cfg.noise.seaLevel.toFixed(2)})`}>
+                <input
+                  type="range"
+                  min={-0.8}
+                  max={0.8}
+                  step={0.01}
+                  value={cfg.noise.seaLevel}
+                  onChange={(e) => setCfg({ ...cfg, noise: { ...cfg.noise, seaLevel: Number(e.target.value) } })}
+                />
+              </Field>
+
+              <Field label={`Coast Sharpness (${cfg.noise.coastSharpness.toFixed(2)})`}>
+                <input
+                  type="range"
+                  min={0.35}
+                  max={1.6}
+                  step={0.01}
+                  value={cfg.noise.coastSharpness}
+                  onChange={(e) => setCfg({ ...cfg, noise: { ...cfg.noise, coastSharpness: Number(e.target.value) } })}
+                />
+              </Field>
+
+              <Field label={`Mountain Sharpness (${cfg.noise.mountainSharpness.toFixed(2)})`}>
+                <input
+                  type="range"
+                  min={0.7}
+                  max={2.2}
+                  step={0.01}
+                  value={cfg.noise.mountainSharpness}
+                  onChange={(e) => setCfg({ ...cfg, noise: { ...cfg.noise, mountainSharpness: Number(e.target.value) } })}
+                />
+              </Field>
+
+              <Field label={`Plate Uplift (${cfg.noise.plateWeight.toFixed(2)})`}>
+                <input
+                  type="range"
+                  min={0}
+                  max={1.2}
+                  step={0.01}
+                  value={cfg.noise.plateWeight}
+                  onChange={(e) => setCfg({ ...cfg, noise: { ...cfg.noise, plateWeight: Number(e.target.value) } })}
                 />
               </Field>
 
