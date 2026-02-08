@@ -15,8 +15,9 @@
     "test:all": "npm run test:zoom && npm run test:terrain",
     "test:visual": "open terrain-visual-test.html",
     "perf:serve": "vite --port 5173",
-    "perf:test": "start-server-and-test perf:serve http://localhost:5173 playwright test -g \"map perf\"",
-    "playwright": "playwright test"
+    "perf:run": "playwright test --config=playwright.config.cjs -g 'map perf'",
+    "perf:test": "start-server-and-test perf:serve http://localhost:5173 perf:run",
+    "playwright": "playwright test --config=playwright.config.cjs"
   },
   "dependencies": {
     "d3": "^7.9.0",

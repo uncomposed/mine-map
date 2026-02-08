@@ -6,16 +6,17 @@ export type GenRequest = {
   chunk: { cq: number; cr: number };
   layer: number;
 };
+
 export type GenResponse = {
   cq: number;
   cr: number;
   size: number;
-  movement: Int8Array;
+  movement: Float32Array;
 };
 
 let worker: Worker | null = null;
 let seq = 0;
-const pending = new Map<number,(r:GenResponse)=>void>();
+const pending = new Map<number, (r: GenResponse) => void>();
 
 export function startWorker() {
   if (!worker) {
@@ -23,9 +24,12 @@ export function startWorker() {
     worker.onmessage = (e: MessageEvent) => {
       const { id, res } = e.data;
       const cb = pending.get(id);
-      if (cb) { pending.delete(id); cb(res as GenResponse); }
+      if (!cb) return;
+      pending.delete(id);
+      cb(res as GenResponse);
     };
   }
+
   return {
     request(req: GenRequest): Promise<GenResponse> {
       const id = ++seq;
@@ -33,6 +37,6 @@ export function startWorker() {
         pending.set(id, resolve);
         worker!.postMessage({ id, req });
       });
-    }
+    },
   };
 }

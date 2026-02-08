@@ -1,297 +1,318 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import * as d3 from "d3";
-import { WorldConfig, Remix } from "../types";
+import { Remix, WorldConfig } from "../types";
 import { startWorker, type GenResponse } from "../workers/genWorker";
 import { usePerfHUDHandle } from "../utils/perfMeter";
+import { prioritizeChunks, visibleChunks } from "../world/chunkPlan";
+import { axialToWorld, clamp, inRadius } from "../world/hexMath";
+import { CHUNK_SIZE } from "../world/terrain";
 
 type Props = { cfg: WorldConfig; remix?: Remix; perf: ReturnType<typeof usePerfHUDHandle> };
 
-type Axial = { q: number; r: number };
-type ChunkCoord = { cq: number; cr: number };
-const CHUNK = 64;
+type HexGridRef = { resetView: () => void };
 
-function axialToWorld(q: number, r: number, R: number) {
-  const x = Math.sqrt(3) * (q + r / 2) * R;
-  const y = (3 / 2) * r * R;
-  return { x, y };
+const TILE_RADIUS = 14;
+const MAX_VISIBLE_REQUESTS = 72;
+const MAX_RENDER_HEXES = 180_000;
+const BG = "#f4f7f8";
+const VIEWPORT_MARGIN = TILE_RADIUS * 2;
+
+const LOCAL_TILE_OFFSETS = buildLocalTileOffsets();
+const HEX_CORNERS = buildHexCorners(TILE_RADIUS);
+const COLOR_BINS = buildColorBins(32);
+
+export const HexGrid = forwardRef<HexGridRef, Props>(({ cfg, remix, perf }, ref) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const zoomRef = useRef<d3.ZoomBehavior<HTMLCanvasElement, unknown> | null>(null);
+  const viewRef = useRef<d3.ZoomTransform>(d3.zoomIdentity);
+
+  const worker = useMemo(() => startWorker(), []);
+  const storeRef = useRef(new Map<string, GenResponse>());
+  const inFlightRef = useRef(new Set<string>());
+  const generationRef = useRef(0);
+
+  const drawFnRef = useRef<() => void>(() => {});
+  const loadFnRef = useRef<() => void>(() => {});
+  const drawQueuedRef = useRef(false);
+  const loadQueuedRef = useRef(false);
+
+  const makeChunkKey = useCallback((generation: number, cq: number, cr: number) => {
+    return `${generation}:${cq}:${cr}`;
+  }, []);
+
+  const requestVisibleChunks = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    if (width <= 0 || height <= 0) return;
+
+    const generation = generationRef.current;
+    const allVisible = visibleChunks(viewRef.current, width, height, TILE_RADIUS, CHUNK_SIZE);
+    perf.setVisibleChunks(allVisible.length);
+
+    const prioritized = prioritizeChunks(
+      allVisible,
+      viewRef.current,
+      width,
+      height,
+      TILE_RADIUS,
+      CHUNK_SIZE,
+      MAX_VISIBLE_REQUESTS,
+    );
+
+    for (const c of prioritized) {
+      const key = makeChunkKey(generation, c.cq, c.cr);
+      if (storeRef.current.has(key) || inFlightRef.current.has(key)) continue;
+
+      inFlightRef.current.add(key);
+      worker
+        .request({ cfg, remix, chunk: c, layer: 0 })
+        .then((res) => {
+          inFlightRef.current.delete(key);
+          if (generationRef.current !== generation) return;
+          storeRef.current.set(key, res);
+          drawFnRef.current();
+        })
+        .catch(() => {
+          inFlightRef.current.delete(key);
+        });
+    }
+  }, [cfg, makeChunkKey, perf, remix, worker]);
+
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const width = Math.max(1, canvas.clientWidth);
+    const height = Math.max(1, canvas.clientHeight);
+
+    const pixelWidth = Math.floor(width * dpr);
+    const pixelHeight = Math.floor(height * dpr);
+    if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+      canvas.width = pixelWidth;
+      canvas.height = pixelHeight;
+    }
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = BG;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const t = viewRef.current;
+    ctx.setTransform(t.k * dpr, 0, 0, t.k * dpr, t.x * dpr, t.y * dpr);
+
+    const worldX0 = -t.x / t.k - VIEWPORT_MARGIN;
+    const worldY0 = -t.y / t.k - VIEWPORT_MARGIN;
+    const worldX1 = worldX0 + width / t.k + VIEWPORT_MARGIN * 2;
+    const worldY1 = worldY0 + height / t.k + VIEWPORT_MARGIN * 2;
+
+    const generation = generationRef.current;
+    const chunks = visibleChunks(t, width, height, TILE_RADIUS, CHUNK_SIZE);
+    const paths = Array.from({ length: COLOR_BINS.length }, () => new Path2D());
+
+    let drawnHexes = 0;
+    const diameterRadius = cfg.diameter * 0.5;
+
+    for (const chunk of chunks) {
+      const res = storeRef.current.get(makeChunkKey(generation, chunk.cq, chunk.cr));
+      if (!res) continue;
+
+      const baseQ = chunk.cq * CHUNK_SIZE;
+      const baseR = chunk.cr * CHUNK_SIZE;
+
+      for (let i = 0; i < res.size; i++) {
+        if (drawnHexes >= MAX_RENDER_HEXES) break;
+
+        const local = LOCAL_TILE_OFFSETS[i];
+        const q = baseQ + local.q;
+        const r = baseR + local.r;
+        if (!inRadius(q, r, diameterRadius)) continue;
+
+        const world = axialToWorld(q, r, TILE_RADIUS);
+        if (world.x < worldX0 || world.x > worldX1 || world.y < worldY0 || world.y > worldY1) continue;
+
+        const normalized = clamp((res.movement[i] + 1) * 0.5, 0, 1);
+        const idx = Math.min(COLOR_BINS.length - 1, Math.floor(normalized * COLOR_BINS.length));
+        appendHexToPath(paths[idx], world.x, world.y);
+        drawnHexes++;
+      }
+    }
+
+    for (let i = 0; i < COLOR_BINS.length; i++) {
+      ctx.fillStyle = COLOR_BINS[i];
+      ctx.fill(paths[i]);
+    }
+
+    perf.setVisibleHexes(drawnHexes);
+  }, [cfg.diameter, makeChunkKey, perf]);
+
+  drawFnRef.current = () => {
+    if (drawQueuedRef.current) return;
+    drawQueuedRef.current = true;
+    requestAnimationFrame(() => {
+      drawQueuedRef.current = false;
+      draw();
+    });
+  };
+
+  loadFnRef.current = () => {
+    if (loadQueuedRef.current) return;
+    loadQueuedRef.current = true;
+    requestAnimationFrame(() => {
+      loadQueuedRef.current = false;
+      requestVisibleChunks();
+    });
+  };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const zoom = d3
+      .zoom<HTMLCanvasElement, unknown>()
+      .scaleExtent([0.18, 10])
+      .translateExtent([
+        [-2_000_000, -2_000_000],
+        [2_000_000, 2_000_000],
+      ])
+      .on("zoom", (event) => {
+        viewRef.current = event.transform;
+        drawFnRef.current();
+        loadFnRef.current();
+      });
+
+    zoomRef.current = zoom;
+
+    const sel = d3.select(canvas);
+    sel.call(zoom as unknown as (selection: d3.Selection<HTMLCanvasElement, unknown, null, undefined>) => void);
+    sel.on("dblclick.zoom", null);
+
+    const centerTransform = d3.zoomIdentity.translate(canvas.clientWidth * 0.5, canvas.clientHeight * 0.5).scale(1);
+    viewRef.current = centerTransform;
+    sel.call(zoom.transform as unknown as any, centerTransform);
+
+    const resizeObserver = new ResizeObserver(() => {
+      drawFnRef.current();
+      loadFnRef.current();
+    });
+    resizeObserver.observe(canvas);
+
+    return () => {
+      resizeObserver.disconnect();
+      sel.on(".zoom", null);
+    };
+  }, []);
+
+  useEffect(() => {
+    generationRef.current += 1;
+    storeRef.current.clear();
+    inFlightRef.current.clear();
+    drawFnRef.current();
+    loadFnRef.current();
+  }, [cfg, remix]);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      resetView() {
+        const canvas = canvasRef.current;
+        const zoom = zoomRef.current;
+        if (!canvas || !zoom) return;
+
+        const centered = d3.zoomIdentity.translate(canvas.clientWidth * 0.5, canvas.clientHeight * 0.5).scale(1);
+        viewRef.current = centered;
+        d3.select(canvas).transition().duration(180).call(zoom.transform as unknown as any, centered);
+      },
+    }),
+    [],
+  );
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ width: "100%", height: "100%", display: "block", touchAction: "none", cursor: "grab" }}
+    />
+  );
+});
+
+function buildLocalTileOffsets() {
+  return Array.from({ length: CHUNK_SIZE * CHUNK_SIZE }, (_, i) => ({
+    q: i % CHUNK_SIZE,
+    r: Math.floor(i / CHUNK_SIZE),
+  }));
 }
 
-function hexPath(cx: number, cy: number, R: number) {
-  const pts = Array.from({ length: 6 }, (_, i) => {
-    const a = (Math.PI / 180) * (60 * i - 30);
-    return [cx + R * Math.cos(a), cy + R * Math.sin(a)];
+function buildHexCorners(radius: number) {
+  return Array.from({ length: 6 }, (_, i) => {
+    const angle = ((60 * i - 30) * Math.PI) / 180;
+    return [Math.cos(angle) * radius, Math.sin(angle) * radius] as const;
   });
-  return "M" + pts.map((p) => p.join(",")).join("L") + "Z";
 }
 
-function visibleChunks(view: d3.ZoomTransform, width: number, height: number, R: number): ChunkCoord[] {
-  const pad = 2 * R;
-  const x0 = -view.x / view.k - pad;
-  const y0 = -view.y / view.k - pad;
-  const x1 = x0 + width / view.k + 2 * pad;
-  const y1 = y0 + height / view.k + 2 * pad;
-  const s = CHUNK * Math.sqrt(3) * R;
-  const t = CHUNK * 1.5 * R;
-  const cq0 = Math.floor(x0 / s) - 1, cq1 = Math.floor(x1 / s) + 1;
-  const cr0 = Math.floor(y0 / t) - 1, cr1 = Math.floor(y1 / t) + 1;
-  const out: ChunkCoord[] = [];
-  for (let cr = cr0; cr <= cr1; cr++) for (let cq = cq0; cq <= cq1; cq++) out.push({ cq, cr });
+function appendHexToPath(path: Path2D, x: number, y: number) {
+  path.moveTo(x + HEX_CORNERS[0][0], y + HEX_CORNERS[0][1]);
+  for (let i = 1; i < HEX_CORNERS.length; i++) {
+    path.lineTo(x + HEX_CORNERS[i][0], y + HEX_CORNERS[i][1]);
+  }
+  path.closePath();
+}
+
+function buildColorBins(count: number) {
+  const stops = [
+    { at: 0.0, hex: "#0b1f3a" },
+    { at: 0.22, hex: "#2166ac" },
+    { at: 0.44, hex: "#67a9cf" },
+    { at: 0.58, hex: "#f7f7bf" },
+    { at: 0.72, hex: "#5aae61" },
+    { at: 0.86, hex: "#a6761d" },
+    { at: 1.0, hex: "#6b3d2e" },
+  ];
+
+  const out: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const t = i / (count - 1);
+    out.push(interpolateStops(stops, t));
+  }
   return out;
 }
 
-function palette() {
-  return [
-    "#1e3a8a", // Deep ocean blue
-    "#3b82f6", // Ocean blue
-    "#60a5fa", // Shallow water/coastal
-    "#93c5fd", // Beach/sand
-    "#fbbf24", // Lowland/plains
-    "#f59e0b", // Highland/hills
-    "#dc2626", // Mountains
-    "#7c2d12"  // High mountains
-  ];
-}
+function interpolateStops(stops: Array<{ at: number; hex: string }>, t: number) {
+  if (t <= stops[0].at) return stops[0].hex;
+  if (t >= stops[stops.length - 1].at) return stops[stops.length - 1].hex;
 
-export const HexGrid = forwardRef<{ resetView: () => void }, Props>(({ cfg, remix, perf }, ref) => {
-  console.log("HexGrid rendering with:", { cfg, remix, perf });
-  
-  try {
-    const svgRef = useRef<SVGSVGElement | null>(null);
-    const gRef = useRef<SVGGElement | null>(null);
-    const [view, setView] = useState<d3.ZoomTransform>(d3.zoomIdentity);
-    const [store] = useState(()=>new Map<string, GenResponse>());
-    const worker = useMemo(()=>startWorker(),[]);
-    const R = 14;
-
-    console.log("HexGrid state initialized");
-
-    // Calculate dynamic viewBox based on diameter
-    const worldRadius = (cfg.diameter / 2) * R * 1.5; // Add some padding
-    const viewBox = [-worldRadius, -worldRadius, worldRadius * 2, worldRadius * 2].join(" ");
-
-    // Performance warning
-    const isHighDiameter = cfg.diameter > 200;
-    const performanceWarning = isHighDiameter ? 
-      `⚠️ High diameter (${cfg.diameter}) may cause performance issues. Consider reducing to 200 or less for smooth interaction.` : null;
-
-    // Reset view function
-    const resetView = useCallback(() => {
-      if (!svgRef.current || !gRef.current) return;
-      
-      const svg = d3.select(svgRef.current);
-      const g = d3.select(gRef.current);
-      
-      // Reset to identity transform
-      const resetTransform = d3.zoomIdentity;
-      setView(resetTransform);
-      g.attr("transform", resetTransform.toString());
-      
-      // Reset the zoom behavior
-      svg.transition().duration(300).call(
-        d3.zoom<SVGSVGElement, unknown>().transform as any,
-        resetTransform
-      );
-    }, []);
-
-    // Expose resetView function to parent component
-    useImperativeHandle(ref, () => ({
-      resetView
-    }), [resetView]);
-
-    // Create zoom behavior with useCallback to prevent recreation
-    const createZoomBehavior = useCallback(() => {
-      console.log("Creating zoom behavior");
-      return d3.zoom<SVGSVGElement, unknown>()
-        .scaleExtent([0.1, 10])
-        .translateExtent([[-worldRadius * 2, -worldRadius * 2], [worldRadius * 2, worldRadius * 2]])
-        .on("start", () => {
-          console.log("Zoom started");
-          if (svgRef.current) {
-            d3.select(svgRef.current).style("cursor", "grabbing");
-          }
-        })
-        .on("zoom", (event) => {
-          console.log("Zoom event triggered:", event.transform);
-          const { transform } = event;
-          
-          // Apply transform to the group element immediately
-          if (gRef.current) {
-            d3.select(gRef.current).attr("transform", transform.toString());
-            console.log("Applied transform to group:", transform.toString());
-          }
-          
-          // Update the view state
-          setView(transform);
-        })
-        .on("end", () => {
-          console.log("Zoom ended, final transform:", view.toString());
-          if (svgRef.current) {
-            d3.select(svgRef.current).style("cursor", "grab");
-          }
-        });
-    }, [worldRadius]); // Removed view dependency to prevent infinite loops
-
-    useEffect(() => {
-      console.log("HexGrid useEffect 1 - setting up zoom");
-      
-      if (!svgRef.current || !gRef.current) {
-        console.log("SVG or group ref not ready yet");
-        return;
-      }
-      
-      const svg = d3.select(svgRef.current);
-      const g = d3.select(gRef.current);
-      
-      console.log("Setting up zoom behavior on SVG element");
-      
-      // Create and apply zoom behavior
-      const zoom = createZoomBehavior();
-      
-      // Set the initial transform if we have a view state
-      if (view.k !== 1 || view.x !== 0 || view.y !== 0) {
-        g.attr("transform", view.toString());
-        svg.call(zoom.transform as any, view);
-      }
-      
-      svg.call(zoom as any);
-      console.log("Zoom behavior applied to SVG");
-      
-      // Disable double-click zoom
-      svg.on("dblclick.zoom", null);
-      
-      // Ensure proper event handling
-      svg.style("touch-action", "none");
-      
-      // Cleanup function
-      return () => {
-        console.log("Cleaning up zoom behavior");
-        svg.on(".zoom", null);
-        svg.style("touch-action", "auto");
-      };
-    }, [cfg.diameter, worldRadius, createZoomBehavior, view]);
-
-    useEffect(() => {
-      console.log("HexGrid useEffect 2 - clearing store");
-      store.clear();
-    }, [cfg.seed, cfg.diameter, cfg.noise, cfg.layers, cfg.bands, remix?.id]);
-
-    useEffect(() => {
-      console.log("HexGrid useEffect 3 - processing chunks");
-      const svg = d3.select(svgRef.current!);
-      const width = svg.node()!.clientWidth;
-      const height = svg.node()!.clientHeight;
-      const chunks = visibleChunks(view, width, height, R);
-      perf.setVisibleChunks(chunks.length);
-
-      // Limit the number of chunks to process for performance
-      const maxChunks = Math.min(chunks.length, 25); // Limit to 25 chunks max
-      const limitedChunks = chunks.slice(0, maxChunks);
-
-      const promises: Promise<void>[] = [];
-      for (const c of limitedChunks) {
-        const key = `${cfg.seed}:${cfg.diameter}:${remix?.id||"base"}:${c.cq}:${c.cr}`;
-        if (store.has(key)) continue;
-        const req = { cfg, remix, chunk: c, layer: 0 };
-        const p = worker.request(req).then((res) => { store.set(key, res); });
-        promises.push(p);
-      }
-
-      Promise.all(promises).then(() => {
-        const g = d3.select(gRef.current!);
-        const pal = palette();
-        const entries = Array.from(store.values());
-        let count = 0;
-
-        // Limit the number of hexes to render for performance
-        const maxHexes = 10000; // Limit to 10k hexes max
-        let hexCount = 0;
-
-        const sels = g.selectAll("path.hex").data(entries.flatMap((res) => {
-          const { cq, cr, movement, size } = res;
-          const items: { d: string; fill: string }[] = [];
-          for (let i = 0; i < size && hexCount < maxHexes; i++) {
-            const q = i % CHUNK + cq * CHUNK;
-            const r = Math.floor(i / CHUNK) + cr * CHUNK;
-            if (!inRadius(q, r, cfg.diameter/2)) continue;
-            const aw = axialToWorld(q, r, R);
-            const band = movement[i];
-            const idx = Math.max(0, Math.min(pal.length-1, bandToIndex(band, cfg.bands)));
-            items.push({ d: hexPath(aw.x, aw.y, R), fill: pal[idx] });
-            count++;
-            hexCount++;
-          }
-          return items;
-        }), (_, i)=>String(i));
-
-        sels.enter().append("path")
-          .attr("class","hex")
-          .attr("vector-effect","non-scaling-stroke")
-          .attr("stroke","#555")
-          .attr("stroke-width","0.75")
-          .attr("fill", d=>d.fill)
-          .attr("d", d=>d.d);
-
-        sels.attr("fill", d=>d.fill).attr("d", d=>d.d);
-        sels.exit().remove();
-
-        perf.setVisibleHexes(count);
-      });
-
-    }, [view, cfg, remix]);
-
-    const width = "100%";
-    const height = "100%";
-
-    return (
-      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-        {performanceWarning && (
-          <div style={{
-            position: 'absolute',
-            top: '10px',
-            left: '10px',
-            backgroundColor: '#fff3cd',
-            border: '1px solid #ffeaa7',
-            borderRadius: '4px',
-            padding: '8px 12px',
-            fontSize: '12px',
-            color: '#856404',
-            zIndex: 1000,
-            maxWidth: '300px'
-          }}>
-            {performanceWarning}
-          </div>
-        )}
-        <svg 
-          ref={svgRef} 
-          viewBox={viewBox} 
-          style={{ 
-            width: '100%', 
-            height: '100%', 
-            background: "white",
-            cursor: 'grab',
-            userSelect: 'none',
-            touchAction: 'none',
-            overflow: 'visible'
-          }} 
-          shapeRendering="geometricPrecision"
-        >
-          <g ref={gRef} />
-        </svg>
-      </div>
-    );
-  } catch (error) {
-    console.error("HexGrid rendering failed:", error);
-    return <div>Error rendering HexGrid</div>;
+  for (let i = 1; i < stops.length; i++) {
+    if (t <= stops[i].at) {
+      const a = stops[i - 1];
+      const b = stops[i];
+      const lt = (t - a.at) / (b.at - a.at);
+      return lerpHex(a.hex, b.hex, lt);
+    }
   }
-});
 
-function inRadius(q: number, r: number, radius: number) {
-  const s = -q - r;
-  return Math.max(Math.abs(q), Math.abs(r), Math.abs(s)) <= radius;
+  return stops[stops.length - 1].hex;
 }
 
-function bandToIndex(v: number, bands: number[]) {
-  let idx = 0;
-  for (let i=0;i<bands.length;i++) if (v > bands[i]) idx = i+1;
-  return idx;
+function lerpHex(a: string, b: string, t: number) {
+  const ar = parseInt(a.slice(1, 3), 16);
+  const ag = parseInt(a.slice(3, 5), 16);
+  const ab = parseInt(a.slice(5, 7), 16);
+
+  const br = parseInt(b.slice(1, 3), 16);
+  const bg = parseInt(b.slice(3, 5), 16);
+  const bb = parseInt(b.slice(5, 7), 16);
+
+  const rr = Math.round(ar + (br - ar) * t);
+  const rg = Math.round(ag + (bg - ag) * t);
+  const rb = Math.round(ab + (bb - ab) * t);
+
+  return `#${toHex(rr)}${toHex(rg)}${toHex(rb)}`;
+}
+
+function toHex(v: number) {
+  return Math.max(0, Math.min(255, v)).toString(16).padStart(2, "0");
 }
