@@ -1,0 +1,40 @@
+{
+  "name": "map-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:zoom": "vitest run tests/zoom-pan.spec.ts",
+    "test:terrain": "vitest run tests/terrain-generation.spec.ts",
+    "test:all": "npm run test:zoom && npm run test:terrain",
+    "test:visual": "open terrain-visual-test.html",
+    "perf:serve": "vite --port 5173",
+    "perf:test": "start-server-and-test perf:serve http://localhost:5173 playwright test -g \"map perf\"",
+    "playwright": "playwright test"
+  },
+  "dependencies": {
+    "d3": "^7.9.0",
+    "open-simplex-noise": "^2.5.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.2",
+    "@types/node": "^20.19.10",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^5.0.0",
+    "start-server-and-test": "^2.0.13",
+    "tinybench": "^2.9.0",
+    "typescript": "^5.9.2",
+    "vite": "^5.4.19",
+    "vitest": "^1.6.1"
+  }
+}

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terrain Generation Visual Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .terrain-preview {
+            display: grid;
+            grid-template-columns: repeat(32, 8px);
+            grid-template-rows: repeat(32, 8px);
+            gap: 1px;
+            margin: 20px 0;
+            border: 2px solid #333;
+            background: #333;
+        }
+        .hex {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .control-group label {
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .control-group input {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .color-legend {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .color-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .color-swatch {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 1px solid #333;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .stats {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Terrain Generation Visual Test</h1>
+        <p>This test shows a 32x32 preview of terrain generation. You should see:</p>
+        <ul>
+            <li><strong>Blue areas</strong> = Oceans and water</li>
+            <li><strong>Yellow/Orange areas</strong> = Land (plains, hills)</li>
+            <li><strong>Red areas</strong> = Mountains</li>
+            <li><strong>Distinct shapes</strong> = Continental masses</li>
+        </ul>
+
+        <div class="color-legend">
+            <div class="color-item">
+                <div class="color-swatch" style="background: #1e3a8a;"></div>
+                <span>Deep Ocean</span>
+            </div>
+            <div class="color-item">
+                <div class="color-swatch" style="background: #3b82f6;"></div>
+                <span>Ocean</span>
+            </div>
+            <div class="color-item">
+                <div class="color-swatch" style="background: #60a5fa;"></div>
+                <span>Shallow Water</span>
+            </div>
+            <div class="color-item">
+                <div class="color-swatch" style="background: #93c5fd;"></div>
+                <span>Beach/Sand</span>
+            </div>
+            <div class="color-item">
+                <div class="color-swatch" style="background: #fbbf24;"></div>
+                <span>Lowland</span>
+            </div>
+            <div class="color-item">
+                <div class="color-swatch" style="background: #f59e0b;"></div>
+                <span>Highland</span>
+            </div>
+            <div class="color-item">
+                <div class="color-swatch" style="background: #dc2626;"></div>
+                <span>Mountains</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>Seed:</label>
+                <input type="number" id="seed" value="123" min="0">
+            </div>
+            <div class="control-group">
+                <label>Plate Count:</label>
+                <input type="number" id="plateCount" value="12" min="1" max="20">
+            </div>
+            <div class="control-group">
+                <label>Warp Amplitude:</label>
+                <input type="number" id="warpAmp" value="80" min="0" max="200" step="5">
+            </div>
+            <div class="control-group">
+                <label>Plate Weight:</label>
+                <input type="number" id="plateWeight" value="0.3" min="0" max="1" step="0.1">
+            </div>
+        </div>
+
+        <button onclick="generateTerrain()">Generate New Terrain</button>
+        <button onclick="randomSeed()">Random Seed</button>
+
+        <div class="terrain-preview" id="terrainPreview"></div>
+
+        <div class="stats" id="stats">
+            Click "Generate New Terrain" to see statistics
+        </div>
+    </div>
+
+    <script>
+        // Simplified terrain generation for testing
+        function makeNoise2D(seed) {
+            return (x, y) => {
+                const a = 1664525;
+                const c = 1013904223;
+                let s = seed;
+                s = (a * s + c) % 2147483647;
+                s = (a * s + c) % 2147483647;
+                return (s / 2147483647) * 2 - 1;
+            };
+        }
+
+        function fbm(noise, x, y, octaves, lacunarity, gain) {
+            let amp = 0.5, freq = 1, sum = 0;
+            for (let i = 0; i < octaves; i++) {
+                sum += amp * noise(x * freq, y * freq);
+                freq *= lacunarity;
+                amp *= gain;
+            }
+            return sum;
+        }
+
+        function plateField(x, y, plateCount, seed) {
+            const sites = [];
+            let s = seed * 1664525 + 1013904223;
+            
+            for (let i = 0; i < plateCount; i++) {
+                s ^= s << 13; s ^= s >> 17; s ^= s << 5;
+                const px = ((s >>> 0) % 20000) - 10000;
+                s ^= s << 13; s ^= s >> 17; s ^= s << 5;
+                const py = ((s >>> 0) % 20000) - 10000;
+                sites.push({ x: px, y: py });
+            }
+
+            let min1 = 1e9, min2 = 1e9;
+            for (let i = 0; i < sites.length; i++) {
+                const dx = x - sites[i].x, dy = y - sites[i].y;
+                const d = Math.hypot(dx, dy);
+                if (d < min1) { min2 = min1; min1 = d; } else if (d < min2) { min2 = d; }
+            }
+            
+            const edge = Math.max(0, Math.min(1, (min2 - min1) / 400));
+            let plateStrength = 1.0 - edge;
+            
+            if (plateStrength > 0.7) {
+                plateStrength = Math.min(1.0, plateStrength + 0.2);
+            }
+            
+            return plateStrength;
+        }
+
+        function generateTerrain() {
+            const seed = parseInt(document.getElementById('seed').value);
+            const plateCount = parseInt(document.getElementById('plateCount').value);
+            const warpAmp = parseInt(document.getElementById('warpAmp').value);
+            const plateWeight = parseFloat(document.getElementById('plateWeight').value);
+
+            const noise = makeNoise2D(seed);
+            const warpX = makeNoise2D(seed * 97 + 1);
+            const warpY = makeNoise2D(seed * 97 + 2);
+
+            const terrain = [];
+            const colors = [
+                '#1e3a8a', '#3b82f6', '#60a5fa', '#93c5fd', 
+                '#fbbf24', '#f59e0b', '#dc2626', '#7c2d12'
+            ];
+
+            let oceanCount = 0, landCount = 0, mountainCount = 0;
+
+            for (let y = 0; y < 32; y++) {
+                for (let x = 0; x < 32; x++) {
+                    const wx = x + warpAmp * 0.01 * warpX(x * 0.1, y * 0.1);
+                    const wy = y + warpAmp * 0.01 * warpY(x * 0.1, y * 0.1);
+
+                    const f = fbm(noise, wx, wy, 4, 2.0, 0.5);
+                    const plate = plateField(wx, wy, plateCount, seed);
+                    
+                    let v = 0.4 * f + plateWeight * plate;
+                    
+                    // Add continental bias
+                    const continentalBias = Math.sin(wx * 0.1) * Math.cos(wy * 0.1) * 0.3;
+                    v += continentalBias;
+
+                    // Classify terrain
+                    let terrainType, colorIndex;
+                    if (v < -0.5) {
+                        terrainType = 'Deep Ocean';
+                        colorIndex = 0;
+                        oceanCount++;
+                    } else if (v < -0.2) {
+                        terrainType = 'Ocean';
+                        colorIndex = 1;
+                        oceanCount++;
+                    } else if (v < 0.1) {
+                        terrainType = 'Lowland';
+                        colorIndex = 4;
+                        landCount++;
+                    } else if (v < 0.4) {
+                        terrainType = 'Highland';
+                        colorIndex = 5;
+                        landCount++;
+                    } else {
+                        terrainType = 'Mountain';
+                        colorIndex = 6;
+                        mountainCount++;
+                    }
+
+                    terrain.push({
+                        x, y, v, terrainType, colorIndex
+                    });
+                }
+            }
+
+            // Render terrain
+            const preview = document.getElementById('terrainPreview');
+            preview.innerHTML = '';
+
+            terrain.forEach(hex => {
+                const div = document.createElement('div');
+                div.className = 'hex';
+                div.style.background = colors[hex.colorIndex];
+                div.title = `${hex.terrainType} (${hex.v.toFixed(2)})`;
+                preview.appendChild(div);
+            });
+
+            // Update stats
+            const stats = document.getElementById('stats');
+            stats.innerHTML = `
+                <strong>Terrain Distribution:</strong><br>
+                Ocean: ${oceanCount} (${(oceanCount / 1024 * 100).toFixed(1)}%)<br>
+                Land: ${landCount} (${(landCount / 1024 * 100).toFixed(1)}%)<br>
+                Mountains: ${mountainCount} (${(mountainCount / 1024 * 100).toFixed(1)}%)<br>
+                <br>
+                <strong>Parameters:</strong><br>
+                Seed: ${seed}<br>
+                Plate Count: ${plateCount}<br>
+                Warp Amplitude: ${warpAmp}<br>
+                Plate Weight: ${plateWeight}<br>
+                <br>
+                <strong>Expected Result:</strong><br>
+                ${oceanCount > 200 && landCount > 200 ? '✅ Good ocean/land balance' : '❌ Poor terrain distribution'}<br>
+                ${mountainCount > 50 ? '✅ Mountains present' : '❌ No mountains generated'}<br>
+                ${plateCount >= 8 ? '✅ Good plate count for continents' : '❌ Low plate count'}
+            `;
+        }
+
+        function randomSeed() {
+            document.getElementById('seed').value = Math.floor(Math.random() * 10000);
+            generateTerrain();
+        }
+
+        // Generate initial terrain
+        generateTerrain();
+    </script>
+</body>
+</html>
