@@ -21,6 +21,8 @@ const baseCfg: WorldConfig = {
     seaLevel: 0.05,
     coastSharpness: 0.78,
     mountainSharpness: 1.25,
+    macroScale: 1.1,
+    microRoughness: 0.55,
   },
   layers: 4,
   bands: [],

@@ -22,6 +22,8 @@ const INITIAL_CONFIG: WorldConfig = {
     seaLevel: 0.05,
     coastSharpness: 0.78,
     mountainSharpness: 1.25,
+    macroScale: 1.1,
+    microRoughness: 0.55,
   },
   layers: 4,
   bands: [],
@@ -158,6 +160,28 @@ export default function App() {
                   step={0.01}
                   value={cfg.noise.mountainSharpness}
                   onChange={(e) => setCfg({ ...cfg, noise: { ...cfg.noise, mountainSharpness: Number(e.target.value) } })}
+                />
+              </Field>
+
+              <Field label={`Macro Scale (${cfg.noise.macroScale.toFixed(2)})`}>
+                <input
+                  type="range"
+                  min={0.45}
+                  max={2.6}
+                  step={0.01}
+                  value={cfg.noise.macroScale}
+                  onChange={(e) => setCfg({ ...cfg, noise: { ...cfg.noise, macroScale: Number(e.target.value) } })}
+                />
+              </Field>
+
+              <Field label={`Micro Roughness (${cfg.noise.microRoughness.toFixed(2)})`}>
+                <input
+                  type="range"
+                  min={0}
+                  max={1.4}
+                  step={0.01}
+                  value={cfg.noise.microRoughness}
+                  onChange={(e) => setCfg({ ...cfg, noise: { ...cfg.noise, microRoughness: Number(e.target.value) } })}
                 />
               </Field>
 

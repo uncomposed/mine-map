@@ -17,6 +17,8 @@ export interface WorldConfig {
     seaLevel: number;
     coastSharpness: number;
     mountainSharpness: number;
+    macroScale: number;
+    microRoughness: number;
   };
   layers: number;
   bands: number[];

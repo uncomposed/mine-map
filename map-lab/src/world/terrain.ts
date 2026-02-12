@@ -62,26 +62,45 @@ export function generateChunkData(req: GenerateChunkInput, context?: TerrainCont
     const r = Math.floor(i / CHUNK_SIZE) + chunk.cr * CHUNK_SIZE;
 
     const world = axialToWorldUnit(q, r);
-    const macroWarpFreq = Math.max(0.0001, cfg.noise.warpFreq * 0.35);
+    const macroScale = Math.max(0.35, cfg.noise.macroScale);
+    const microRoughness = Math.max(0, cfg.noise.microRoughness);
+
+    const macroWarpFreq = Math.max(0.0001, cfg.noise.warpFreq * 0.35 / macroScale);
     const microWarpFreq = Math.max(0.0001, cfg.noise.warpFreq * 1.6);
     const macroWarpAmp = cfg.noise.warpAmp * 0.55;
-    const microWarpAmp = cfg.noise.warpAmp * 0.95;
+    const microWarpAmp = cfg.noise.warpAmp * (0.65 + microRoughness * 0.95);
 
     const macroWx = world.x + macroWarpAmp * ctx.warpX(world.x * macroWarpFreq, world.y * macroWarpFreq);
     const macroWy = world.y + macroWarpAmp * ctx.warpY(world.x * macroWarpFreq, world.y * macroWarpFreq);
     const microWx = world.x + microWarpAmp * ctx.warpX(world.x * microWarpFreq + 1000, world.y * microWarpFreq - 1000);
     const microWy = world.y + microWarpAmp * ctx.warpY(world.x * microWarpFreq - 1000, world.y * microWarpFreq + 1000);
 
-    const macroContinent = fbm(ctx.continent, macroWx * 0.12, macroWy * 0.12, 4, 2.0, 0.5);
+    const macroContinent = fbm(
+      ctx.continent,
+      (macroWx * 0.12) / macroScale,
+      (macroWy * 0.12) / macroScale,
+      4,
+      2.0,
+      0.5,
+    );
     const microFbm = fbm(ctx.base, microWx, microWy, cfg.noise.octaves, cfg.noise.lacunarity, cfg.noise.gain);
-    const detail = fbm(ctx.detail, microWx * 1.7, microWy * 1.7, Math.max(2, cfg.noise.octaves - 1), 2.1, 0.52);
+    const detail = fbm(
+      ctx.detail,
+      microWx * (1.3 + microRoughness * 1.25),
+      microWy * (1.3 + microRoughness * 1.25),
+      Math.max(2, cfg.noise.octaves - 1),
+      2.1 + microRoughness * 0.55,
+      0.52,
+    );
     const ridged = 1 - Math.abs(fbm(ctx.ridge, microWx * 1.35, microWy * 1.35, Math.max(2, cfg.noise.octaves - 1), cfg.noise.lacunarity, cfg.noise.gain));
     const plate = plateMetrics(macroWx, macroWy, ctx.plates);
     const seam = seamField(ctx.seam, microWx, microWy, cfg.noise.seamDensity);
     const depth = depthBand(layer, cfg.layers);
 
     const macro = macroContinent * 0.95 + plate.interior * cfg.noise.plateWeight;
-    const micro = microFbm * cfg.noise.fbmWeight + (ridged * 2 - 1) * cfg.noise.ridgedWeight + detail * 0.25;
+    const microGain = 0.45 + microRoughness * 1.35;
+    const micro =
+      (microFbm * cfg.noise.fbmWeight + (ridged * 2 - 1) * cfg.noise.ridgedWeight + detail * 0.25) * microGain;
     const boundaryUplift = plate.boundary * Math.max(0.05, cfg.noise.plateWeight) * 0.85;
 
     let v = macro + micro + boundaryUplift + seam * cfg.noise.seamWeight * 0.18 + cfg.noise.depthWeight * depth;
